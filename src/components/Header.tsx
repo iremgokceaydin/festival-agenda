@@ -78,7 +78,7 @@ export default function Header(props: Props) {
         background: '#FFFDF8'
       }}
     >
-      <div>
+      <div style={{ flex: '1 1 320px', minWidth: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#B8552E' }}>Programming</div>
         <input
           type="text"
@@ -90,7 +90,6 @@ export default function Header(props: Props) {
             margin: '4px 0 0',
             padding: 0,
             width: '100%',
-            maxWidth: 520,
             border: 'none',
             background: 'transparent',
             borderRadius: 0,
@@ -99,7 +98,9 @@ export default function Header(props: Props) {
             fontSize: 34,
             lineHeight: 1.1,
             letterSpacing: '-0.02em',
-            color: '#3D2E1F'
+            color: '#3D2E1F',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}
         />
         <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
