@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { nanoid } from 'nanoid';
-import { getRedis } from '../_redis';
+import { getRedis } from '../_redis.js';
 
 const ID_LENGTH = 8;
 const KEY_PREFIX = 'schedule:';

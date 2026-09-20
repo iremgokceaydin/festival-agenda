@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getRedis } from '../_redis';
+import { getRedis } from '../_redis.js';
 
 const KEY_PREFIX = 'schedule:';
 
