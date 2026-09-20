@@ -1,0 +1,55 @@
+body {
+  margin: 0;
+  background: #fbf8f2;
+  color: #2a2520;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+* {
+  box-sizing: border-box;
+}
+a {
+  color: #b8552e;
+  text-decoration: none;
+}
+a:hover {
+  color: #8e3e20;
+  text-decoration: underline;
+}
+input,
+select,
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+input[type='number'],
+input[type='time'],
+input[type='text'],
+select {
+  background: #fffdf8;
+  border: 1px solid #e6ddd0;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(199, 122, 74, 0.4);
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #e6ddd0;
+  border-radius: 999px;
+  border: 2px solid #fbf8f2;
+}
+button {
+  font-family: 'Avantt', 'IBM Plex Sans', sans-serif;
+}
+.hover-panel:hover {
+  background: #f5efe4;
+}

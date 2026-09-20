@@ -23,3 +23,20 @@ The design medium is **HTML/CSS/JS** — these are prototypes, not production co
 - `README.md` — this file
 - `chats/` — conversation transcripts (read these!)
 - `project/` — the `Festival weekend schedule builder` project files (HTML prototypes, assets, components)
+
+## The production implementation
+
+`Festival Schedule.dc.html` has been implemented as a real app in this repo:
+
+- `src/` — React + TypeScript + Vite frontend (componentized, not a copy of the prototype's template markup)
+- `api/` — Vercel serverless functions for anonymous share-by-link persistence (`POST /api/schedules`, `GET /api/schedules/:id`), backed by a Redis store (Upstash, via Vercel's Marketplace Redis integration or `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`)
+
+Run locally:
+
+```
+npm install
+npm run dev      # frontend only, http://localhost:5173
+vercel dev        # frontend + /api routes together (needs `vercel link` + a Redis integration attached to the project)
+```
+
+Build: `npm run build`. Deploy: push to a Vercel project with a Redis (Upstash) integration attached.
