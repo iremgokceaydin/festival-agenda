@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #FBF8F2; color: #2A2520; font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+  a { color: #B8552E; text-decoration: none; }
+  a:hover { color: #8E3E20; text-decoration: underline; }
+  input, select, button { font-family: inherit; font-size: inherit; color: inherit; }
+  input[type="number"], input[type="time"], input[type="text"], select { background: #FFFDF8; border: 1px solid #E6DDD0; border-radius: 6px; padding: 6px 8px; }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(199,122,74,0.4); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #E6DDD0; border-radius: 999px; border: 2px solid #FBF8F2; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;">
+
+  <header style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;padding:20px 28px 16px;border-bottom:1px solid #E6DDD0;background:#FFFDF8;">
+    <div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#B8552E;">Programming</div>
+      <input type="text" value="{{ agendaName }}" onChange="{{ onNameChange }}" placeholder="Festival Weekend Schedule" data-keep-selection="" style="margin:4px 0 0;padding:0;width:100%;max-width:520px;border:none;background:transparent;border-radius:0;font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:34px;line-height:1.1;letter-spacing:-0.02em;color:#3D2E1F;" />
+      <div style="margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A7D6D;">{{ rangeLabel }}</span>
+        <sc-if value="{{ snapshotNote }}" hint-placeholder-val="{{ false }}">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#7A5A1F;background:#F6ECD9;border-radius:999px;padding:3px 8px;white-space:nowrap;">{{ snapshotNote }}</span>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px;">
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Festival days</span>
+        <div style="display:flex;gap:0;border:1px solid #E6DDD0;border-radius:6px;overflow:hidden;background:#FBF8F2;">
+          <sc-for list="{{ dayCountOptions }}" as="o" hint-placeholder-count="2">
+            <button onClick="{{ o.onClick }}" style="border:none;padding:7px 12px;font-size:12.5px;white-space:nowrap;flex:none;cursor:pointer;background:{{ o.bg }};color:{{ o.fg }};">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Screening window</span>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;">
+          <input type="time" value="{{ startValue }}" onChange="{{ onStartChange }}" style="width:auto;min-width:142px;" />
+          <span style="color:#AFA594;">to</span>
+          <input type="time" value="{{ endValue }}" onChange="{{ onEndChange }}" style="width:auto;min-width:142px;" />
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Min break</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" min="5" max="120" step="5" value="{{ minBreakValue }}" onChange="{{ onMinBreakChange }}" style="width:68px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;" />
+          <div style="display:flex;gap:4px;">
+            <sc-for list="{{ breakSwatches }}" as="s" hint-placeholder-count="4">
+              <button onClick="{{ s.onClick }}" title="Break colour" style="width:18px;height:18px;border-radius:4px;cursor:pointer;background:{{ s.color }};border:{{ s.ring }};padding:0;"></button>
+            </sc-for>
+          </div>
+        </div>
+      </div>      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Zoom</span>
+        <div style="display:flex;align-items:center;gap:8px;height:33px;">
+          <input type="range" min="0.6" max="1.8" step="0.05" value="{{ zoomValue }}" onChange="{{ onZoomChange }}" style="width:104px;accent-color:#B8552E;" />
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8A7D6D;width:40px;white-space:nowrap;">{{ zoomLabel }}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Export</span>
+        <div style="display:flex;align-items:center;gap:6px;height:33px;">
+          <button onClick="{{ onExportPdf }}" style="border:1px solid #E6DDD0;background:#FBF8F2;border-radius:6px;padding:7px 12px;font-family:'Avantt','IBM Plex Sans',sans-serif;font-weight:600;font-size:12.5px;white-space:nowrap;cursor:pointer;color:#3D2E1F;flex:none;" style-hover="background:#F5EFE4;">PDF</button>
+          <button onClick="{{ onExportCsv }}" style="border:1px solid #E6DDD0;background:#FBF8F2;border-radius:6px;padding:7px 12px;font-family:'Avantt','IBM Plex Sans',sans-serif;font-weight:600;font-size:12.5px;white-space:nowrap;cursor:pointer;color:#3D2E1F;flex:none;" style-hover="background:#F5EFE4;">CSV</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Snapshot</span>
+        <div data-keep-selection="" style="display:flex;align-items:center;gap:8px;position:relative;">
+          <sc-if value="{{ naming }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:40px;right:0;z-index:60;display:flex;flex-direction:column;gap:8px;width:288px;padding:12px;border:1px solid #E6DDD0;border-radius:8px;background:#FFFDF8;box-shadow:0 12px 28px -10px rgba(61,46,31,0.28);">
+              <sc-if value="{{ noShareUrl }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Name this agenda</span>
+                <input type="text" value="{{ nameDraft }}" onChange="{{ onNameDraft }}" onKeyDown="{{ onNameKey }}" ref="{{ nameRef }}" placeholder="Festival Weekend Schedule" style="font-size:13.5px;" />
+              </sc-if>
+              <sc-if value="{{ shareUrl }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Select and copy — ⌘C / Ctrl+C</span>
+                <input type="text" readonly="" value="{{ shareUrl }}" ref="{{ urlRef }}" onFocus="{{ onUrlFocus }}" onClick="{{ onUrlFocus }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5B4A3A;" />
+              </sc-if>
+              <sc-if value="{{ importing }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Paste a share link or code</span>
+                <input type="text" value="{{ importDraft }}" onChange="{{ onImportDraft }}" ref="{{ importRef }}" placeholder="https://… or eyJ2Ijoy…" style="font-family:'IBM Plex Mono',monospace;font-size:11px;" />
+                <sc-if value="{{ importError }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:11px;color:#7A2E2E;">{{ importError }}</span>
+                </sc-if>
+                <button onClick="{{ onImportApply }}" style="border:none;background:#B8552E;color:#FFFDF8;border-radius:6px;padding:8px;font-weight:600;font-size:12.5px;cursor:pointer;">Load schedule</button>
+              </sc-if>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <sc-if value="{{ noShareUrl }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ onImportOpen }}" style="border:none;background:none;cursor:pointer;font-size:11.5px;color:#B8552E;padding:0;">Paste a link instead</button>
+                </sc-if>
+                <button onClick="{{ onNamingCancel }}" style="border:none;background:none;cursor:pointer;font-size:11.5px;color:#8A7D6D;margin-left:auto;padding:0;">Close</button>
+              </div>
+            </div>
+          </sc-if>
+          <button onClick="{{ onReset }}" title="Discard local changes and reload the default programme" style="border:1px solid #E6DDD0;background:#FBF8F2;border-radius:6px;padding:7px 12px;font-family:'Avantt','IBM Plex Sans',sans-serif;font-weight:600;font-size:12.5px;white-space:nowrap;cursor:pointer;color:#3D2E1F;flex:none;" style-hover="background:#F5EFE4;">Reset</button>
+          <button onClick="{{ onShare }}" style="border:1px solid #E6DDD0;background:#FBF8F2;border-radius:6px;padding:7px 12px;width:142px;text-align:center;flex:none;font-family:'Avantt','IBM Plex Sans',sans-serif;font-weight:600;font-size:12.5px;white-space:nowrap;cursor:pointer;color:#3D2E1F;" style-hover="background:#F5EFE4;">{{ shareAction }}</button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <div style="flex:1;min-height:0;display:flex;align-items:stretch;">
+
+    <aside data-keep-selection="" style="width:302px;flex:none;border-right:1px solid #E6DDD0;padding:20px;display:flex;flex-direction:column;gap:18px;background:#FFFDF8;overflow:auto;">
+
+      <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;">
+            <h2 style="margin:0;font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:20px;color:#3D2E1F;">Edit session</h2>
+            <button onClick="{{ onDeselect }}" style="border:none;background:none;cursor:pointer;font-size:11.5px;color:#8A7D6D;padding:0;">Done</button>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Title
+            <input type="text" value="{{ sel.title }}" onChange="{{ onSelTitle }}" style="font-size:14px;font-weight:400;text-transform:none;letter-spacing:0;color:#2A2520;" />
+          </label>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Kind</span>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <sc-for list="{{ selTypeOptions }}" as="o" hint-placeholder-count="3">
+                <button onClick="{{ o.onClick }}" style="text-align:left;border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.fg }};border-radius:6px;padding:7px 10px;font-size:12.5px;cursor:pointer;">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-end;">
+            <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Runtime (min)
+              <input type="number" min="5" max="400" step="5" value="{{ sel.duration }}" onChange="{{ onSelDuration }}" style="width:96px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:400;letter-spacing:0;color:#2A2520;" />
+            </label>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A7D6D;padding-bottom:8px;">{{ sel.timeLabel }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Colour</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ selSwatches }}" as="s" hint-placeholder-count="8">
+                <button onClick="{{ s.onClick }}" style="width:24px;height:24px;border-radius:5px;cursor:pointer;padding:0;background:{{ s.color }};border:{{ s.ring }};"></button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;padding-top:2px;">
+            <button onClick="{{ onDuplicate }}" style="flex:1;border:1px solid #E6DDD0;background:#FBF8F2;border-radius:6px;padding:8px;font-size:12.5px;cursor:pointer;">Duplicate</button>
+            <button onClick="{{ onDelete }}" style="flex:1;border:1px solid #EECECE;background:#F6E0E0;color:#7A2E2E;border-radius:6px;padding:8px;font-size:12.5px;cursor:pointer;">Delete</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <h2 style="margin:0;font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:20px;color:#3D2E1F;">Add a session</h2>
+          <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Title
+            <input type="text" value="{{ draft.title }}" onChange="{{ onDraftTitle }}" placeholder="Film or block name" style="font-size:14px;font-weight:400;text-transform:none;letter-spacing:0;color:#2A2520;" />
+          </label>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Kind</span>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <sc-for list="{{ draftTypeOptions }}" as="o" hint-placeholder-count="3">
+                <button onClick="{{ o.onClick }}" style="text-align:left;border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.fg }};border-radius:6px;padding:7px 10px;font-size:12.5px;cursor:pointer;">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;">
+            <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Runtime (min)
+              <input type="number" min="5" max="400" step="5" value="{{ draft.duration }}" onChange="{{ onDraftDuration }}" style="width:96px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:400;letter-spacing:0;color:#2A2520;" />
+            </label>
+            <label style="flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Day
+              <select value="{{ draft.dayId }}" onChange="{{ onDraftDay }}" style="font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:#2A2520;">
+                <sc-for list="{{ dayOptions }}" as="d" hint-placeholder-count="3">
+                  <option value="{{ d.id }}">{{ d.label }}</option>
+                </sc-for>
+              </select>
+            </label>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Colour</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ draftSwatches }}" as="s" hint-placeholder-count="8">
+                <button onClick="{{ s.onClick }}" style="width:24px;height:24px;border-radius:5px;cursor:pointer;padding:0;background:{{ s.color }};border:{{ s.ring }};"></button>
+              </sc-for>
+            </div>
+          </div>
+          <button onClick="{{ onAdd }}" style="border:none;background:#B8552E;color:#FFFDF8;border-radius:6px;padding:11px;font-family:'Avantt','IBM Plex Sans',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:0.005em;cursor:pointer;" style-hover="background:#C77A4A;">Add to schedule</button>
+        </div>
+      </sc-if>
+
+      <div style="height:1px;background:#E6DDD0;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#6B6056;">Legend</span>
+        <sc-for list="{{ legend }}" as="l" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#5B4A3A;">
+            <span style="width:12px;height:12px;border-radius:3px;flex:none;background:{{ l.color }};"></span>{{ l.label }}
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ parkedNote }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid #EEDEBE;background:#F6ECD9;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.5;color:#7A5A1F;">{{ parkedNote }}</div>
+      </sc-if>
+
+      <p style="margin:0;font-family:'Newsreader',Georgia,serif;font-size:13.5px;line-height:1.6;color:#6B6056;">Drag a block anywhere — into another slot, another day, or down to a later hour with open time before it. It carries its {{ minBreakValue }}-minute break and everything after it shifts. Drag the bottom edge of a session or a break to stretch it. Breaks hold a {{ minBreakValue }}-minute minimum.</p>
+    </aside>
+
+    <main style="flex:1;min-width:0;overflow:auto;padding:20px 24px 40px;">
+      <div style="display:flex;align-items:stretch;gap:0;min-width:640px;">
+
+        <div style="width:76px;flex:none;position:relative;">
+          <div style="height:{{ headerH }}px;"></div>
+          <div style="position:relative;height:{{ gridH }}px;">
+            <sc-for list="{{ hourLabels }}" as="h" hint-placeholder-count="13">
+              <div style="position:absolute;right:10px;top:{{ h.top }}px;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A7D6D;white-space:nowrap;">{{ h.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-for list="{{ days }}" as="d" key="{{ d.id }}" hint-placeholder-count="3">
+          <div style="flex:1;min-width:0;border-left:1px solid #E6DDD0;">
+            <div style="height:{{ headerH }}px;padding:0 12px 10px;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;">
+              <div style="display:flex;align-items:baseline;gap:8px;white-space:nowrap;">
+                <span style="font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#3D2E1F;overflow:hidden;text-overflow:ellipsis;">{{ d.label }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#AFA594;white-space:nowrap;">{{ d.date }}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A7D6D;white-space:nowrap;">{{ d.stat }}</span>
+                <sc-if value="{{ d.overrun }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#7A2E2E;background:#F6E0E0;border-radius:999px;padding:2px 7px;white-space:nowrap;">{{ d.overrun }}</span>
+                </sc-if>
+              </div>
+            </div>
+            <div ref="{{ d.colRef }}" style="position:relative;height:{{ gridH }}px;background:#FFFDF8;border-top:1px solid #E6DDD0;">
+              <sc-for list="{{ gridLines }}" as="g" hint-placeholder-count="24">
+                <div style="position:absolute;left:0;right:0;top:{{ g.top }}px;height:1px;background:{{ g.color }};"></div>
+              </sc-for>
+              <sc-for list="{{ d.blocks }}" as="b" key="{{ b.id }}" hint-placeholder-count="5">
+                <div data-block="" style="position:absolute;left:5px;right:5px;top:{{ b.top }}px;height:{{ b.h }}px;padding:{{ b.outerPad }};z-index:{{ b.z }};">
+                  <div onPointerDown="{{ b.onDown }}" style="height:100%;border-radius:7px;border:1px {{ b.borderStyle }} {{ b.borderCol }};background:{{ b.bg }};box-shadow:{{ b.shadow }};display:flex;overflow:hidden;position:relative;cursor:{{ b.cursor }};transition:box-shadow 120ms ease;">
+                    <div style="width:{{ b.barW }}px;flex:none;background:{{ b.bar }};"></div>
+                    <sc-if value="{{ b.showIntro }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:absolute;left:{{ b.barW }}px;right:0;top:0;height:{{ b.introH }}px;background:{{ b.introTint }};display:flex;align-items:center;padding:0 9px;overflow:hidden;">
+                        <sc-if value="{{ b.showIntroText }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;line-height:1;letter-spacing:0.04em;text-transform:uppercase;color:#2A2520;white-space:nowrap;">{{ b.introLabel }}</span>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <div style="flex:1;min-width:0;height:100%;padding:{{ b.pad }};padding-top:{{ b.introH }}px;display:flex;flex-direction:column;justify-content:center;gap:1px;overflow:hidden;">
+                      <sc-if value="{{ b.showTitle }}" hint-placeholder-val="{{ true }}">
+                      <div style="font-family:{{ b.titleFont }};font-size:{{ b.titleSize }}px;font-weight:{{ b.titleWeight }};line-height:{{ b.lineH }};color:{{ b.titleCol }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.title }}</div>
+                      </sc-if>
+                      <sc-if value="{{ b.showMeta }}" hint-placeholder-val="{{ true }}">
+                        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6B6056;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.sub }}</div>
+                      </sc-if>
+                    </div>
+                    <div onPointerDown="{{ b.onResize }}" title="Drag to change length" style="position:absolute;left:0;right:0;bottom:0;height:9px;cursor:ns-resize;"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;minBreak&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:15,&quot;min&quot;:5,&quot;max&quot;:60,&quot;step&quot;:5,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scheduling&quot;},&quot;pxPerMin&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1.05,&quot;min&quot;:0.6,&quot;max&quot;:1.8,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scheduling&quot;},&quot;featureColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3A5A7A&quot;,&quot;options&quot;:[&quot;#3A5A7A&quot;,&quot;#2F4858&quot;,&quot;#4A6A8A&quot;,&quot;#3D2E1F&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Colours&quot;},&quot;shortColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#C06A34&quot;,&quot;options&quot;:[&quot;#C06A34&quot;,&quot;#B8552E&quot;,&quot;#C79A4A&quot;,&quot;#C77A4A&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Colours&quot;},&quot;galaColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3F6B52&quot;,&quot;options&quot;:[&quot;#567A63&quot;,&quot;#3F6B52&quot;,&quot;#6E8C6A&quot;,&quot;#2F5A45&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Colours&quot;},&quot;breakColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#8A7D6D&quot;,&quot;options&quot;:[&quot;#8A7D6D&quot;,&quot;#AFA594&quot;,&quot;#CFC5B2&quot;,&quot;#5B4A3A&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Colours&quot;}}">
+const PALETTE = ['#3A5A7A', '#C06A34', '#567A63', '#A07A2E', '#6E5A8C', '#5B4A3A', '#A44040', '#8A7D6D'];
+const TYPES = [
+  { id: 'feature', label: 'Feature film', tag: 'FEATURE' },
+  { id: 'fiction', label: 'Short films — fiction', tag: 'SHORTS · FICTION' },
+  { id: 'doc', label: 'Short films — documentary', tag: 'SHORTS · DOC' }
+];
+const INTRO = 5;
+const STORE = 'festival-weekend-schedule-v7';
+function seedHash(days) {
+  const str = JSON.stringify(days.map(d => [d.id, d.label, d.date, d.sessions.map(s => [s.title, s.type, s.duration, s.color || '', s.leadIn ?? '', s.gala ? 1 : 0])]));
+  let a = 5381;
+  for (let i = 0; i < str.length; i++) a = ((a * 33) ^ str.charCodeAt(i)) >>> 0;
+  return 'seed-' + a.toString(36);
+}
+
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function mk(title, type, duration, color) { return { id: uid(), title, type, duration, color: color || null, leadIn: null }; }
+
+const DEFAULT_DAYS = [
+  { id: 'fri', label: 'Friday', date: 'Oct 16', sessions: [Object.assign(mk('Feature #1', 'feature', 100), { leadIn: 360 }), mk('Feature #2', 'feature', 100), mk('Feature #3', 'feature', 100)] },
+  { id: 'sat', label: 'Saturday', date: 'Oct 17', sessions: [Object.assign(mk('Shorts — Fiction #1', 'fiction', 90), { leadIn: 90 }), mk('Shorts — Fiction #2', 'fiction', 90), mk('Feature #4', 'feature', 100), Object.assign(mk('Feature #5 - GALA Film', 'feature', 100), { gala: true })] },
+  { id: 'sun', label: 'Sunday', date: 'Oct 18', sessions: [Object.assign(mk('Shorts — Documentary #1', 'doc', 90), { leadIn: 30 }), mk('Feature #6', 'feature', 100), mk('Feature #7', 'feature', 100), mk('Feature #8', 'feature', 100), mk('Feature #9', 'feature', 100)] }
+];
+const DEFAULT_DAYS_2 = [
+  { id: 'sat', label: 'Saturday', date: 'Oct 17', sessions: [Object.assign(mk('Shorts — Fiction #1', 'fiction', 90), { leadIn: 90 }), mk('Shorts — Fiction #2', 'fiction', 90), mk('Feature #1', 'feature', 100), Object.assign(mk('Feature #2 - GALA Film', 'feature', 100), { gala: true })] },
+  { id: 'sun', label: 'Sunday', date: 'Oct 18', sessions: [mk('Shorts — Documentary #1', 'doc', 90), mk('Feature #3', 'feature', 100), mk('Feature #4', 'feature', 100), mk('Feature #5', 'feature', 100), mk('Feature #6', 'feature', 100), mk('Feature #7', 'feature', 100)] }
+];
+const DEFAULT_SEED = seedHash(DEFAULT_DAYS.concat(DEFAULT_DAYS_2));
+function cloneDays(days) {
+  return days.map(d => Object.assign({}, d, { sessions: d.sessions.map(s => Object.assign({}, s, { id: uid() })) }));
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.cols = {};
+    this.state = {
+      dayCount: 3,
+      startMin: 11 * 60,
+      endMin: 23 * 60,
+      selId: null,
+      dragId: null,
+      shareNote: null,
+      agendaName: 'Festival Weekend Schedule',
+      naming: false,
+      nameDraft: '',
+      importing: false,
+      importDraft: '',
+      importError: null,
+      shareUrl: null,
+      snapshotNote: null,
+
+      minBreak: null,
+      breakColor: null,
+      zoom: null,
+      seed: DEFAULT_SEED,
+      days: cloneDays(DEFAULT_DAYS),
+      altDays: cloneDays(DEFAULT_DAYS_2),
+      draft: { title: '', type: 'feature', duration: 100, dayId: 'sat', color: null }
+    };
+    this.state.seed = DEFAULT_SEED;
+  }
+
+  /* ---- settings resolved from props with in-app overrides ---- */
+  get minBreak() { return this.state.minBreak ?? this.props.minBreak ?? 15; }
+  get breakColor() { return this.state.breakColor ?? this.props.breakColor ?? '#8A7D6D'; }
+  get pxPerMin() { return this.state.zoom ?? this.props.pxPerMin ?? 1.05; }
+  typeColor(type) {
+    if (type === 'feature') return this.props.featureColor ?? '#3A5A7A';
+    return this.props.shortColor ?? '#C06A34';
+  }
+  colorOf(s) { return s.color || ((s.gala || /gala/i.test(s.title || '')) ? (this.props.galaColor ?? '#567A63') : this.typeColor(s.type)); }
+
+  snapshot() {
+    const s = this.state;
+    return { v: 2, seed: s.seed || DEFAULT_SEED, name: s.agendaName, days: s.days, altDays: s.altDays, dayCount: s.dayCount, startMin: s.startMin, endMin: s.endMin, minBreak: s.minBreak, breakColor: s.breakColor, at: Date.now() };
+  }
+  // A published artifact runs inside an iframe: its own location is a sandbox
+  // URL that nobody else can open. Share (and read) the outer page URL instead.
+  outerUrl() {
+    try {
+      if (window.top && window.top !== window && window.top.location.href) return window.top.location.href;
+    } catch (e) { /* cross-origin */ }
+    return window.location.href;
+  }
+  encode(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/=+$/, ''); }
+  decode(str) { return JSON.parse(decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/')))))    ; }
+  apply(d, note) {
+    if (!d || !Array.isArray(d.days)) return false;
+    this.setState({
+      days: d.days, altDays: d.altDays || cloneDays(DEFAULT_DAYS_2), dayCount: d.dayCount ?? 3, startMin: d.startMin ?? 660, endMin: d.endMin ?? 1380,
+      seed: d.seed || DEFAULT_SEED, agendaName: d.name || '', zoom: d.zoom ?? null,
+      minBreak: d.minBreak ?? null, breakColor: d.breakColor ?? null, snapshotNote: note || null
+    });
+    return true;
+  }
+  exportRows() {
+    const out = [];
+    this.visibleDays().forEach(day => {
+      const { rows } = this.place(day.sessions);
+      rows.forEach(r => {
+        if (r.gap) out.push({ day: day, start: r.gap.start, end: r.gap.start + r.gap.dur, title: 'Break', kind: 'Break', dur: r.gap.dur, isBreak: true });
+        const t = TYPES.find(x => x.id === r.session.type) || TYPES[0];
+        out.push({ day: day, start: r.start, end: r.end, title: r.session.title, kind: t.label, dur: r.session.duration + INTRO, isBreak: false });
+      });
+    });
+    return out;
+  }
+  onExportCsv = () => {
+    const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const lines = [['Day', 'Date', 'Start', 'End', 'Title', 'Kind', 'Minutes'].join(',')];
+    this.exportRows().forEach(r => {
+      lines.push([q(r.day.label), q(r.day.date), q(this.fmt(r.start)), q(this.fmt(r.end)), q(r.title), q(r.kind), r.dur].join(','));
+    });
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = ((this.state.agendaName || 'festival weekend schedule').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'schedule') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+  onExportPdf = () => {
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const byDay = {};
+    this.exportRows().forEach(r => { (byDay[r.day.id] = byDay[r.day.id] || { day: r.day, rows: [] }).rows.push(r); });
+    const sections = Object.keys(byDay).map(k => {
+      const g = byDay[k];
+      const total = g.rows.filter(r => !r.isBreak).reduce((a, r) => a + r.dur, 0);
+      const body = g.rows.map(r => '<tr class="' + (r.isBreak ? 'brk' : '') + '"><td class="t">' + this.fmt(r.start) + ' – ' + this.fmt(r.end) + '</td><td>' + esc(r.title) + '</td><td class="k">' + (r.isBreak ? '' : esc(r.kind)) + '</td><td class="d">' + r.dur + ' min</td></tr>').join('');
+      return '<section><h2>' + esc(g.day.label) + ' <span class="date">' + esc(g.day.date) + '</span></h2>' +
+        '<p class="meta">' + g.rows.filter(r => !r.isBreak).length + ' films · ' + this.dur(total) + ' on screen</p>' +
+        '<table>' + body + '</table></section>';
+    }).join('');
+    const doc = '<!doctype html><html><head><meta charset="utf-8"><title>Festival Weekend Schedule</title>' +
+      '<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">' +
+      '<style>@page{margin:18mm}body{margin:0;background:#fff;color:#2A2520;font-family:"IBM Plex Sans",sans-serif;font-size:11pt}' +
+      'h1{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:26pt;margin:0;color:#3D2E1F}' +
+      '.sub{font-family:"IBM Plex Mono",monospace;font-size:9pt;color:#8A7D6D;margin:4pt 0 18pt}' +
+      'section{break-inside:avoid;margin-bottom:20pt}' +
+      'h2{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:16pt;margin:0;color:#3D2E1F;border-bottom:1px solid #E6DDD0;padding-bottom:4pt}' +
+      'h2 .date{font-family:"IBM Plex Mono",monospace;font-size:9pt;color:#AFA594}' +
+      '.meta{font-family:"IBM Plex Mono",monospace;font-size:8.5pt;color:#8A7D6D;margin:5pt 0 8pt}' +
+      'table{width:100%;border-collapse:collapse}td{padding:5pt 6pt;border-bottom:1px solid #EFE8DB;vertical-align:baseline}' +
+      'td.t{font-family:"IBM Plex Mono",monospace;font-size:9pt;color:#5B4A3A;white-space:nowrap;width:26%}' +
+      'td.k{font-size:9pt;color:#6B6056;width:24%}td.d{font-family:"IBM Plex Mono",monospace;font-size:9pt;color:#8A7D6D;text-align:right;white-space:nowrap;width:14%}' +
+      'tr.brk td{color:#8A7D6D;font-family:"IBM Plex Mono",monospace;font-size:8.5pt}</style></head><body>' +
+      '<h1>' + esc(this.state.agendaName || 'Festival Weekend Schedule') + '</h1><p class="sub">' + esc((this.state.dayCount === 3 ? 'Friday – Sunday' : 'Saturday – Sunday') + ' · ' + this.fmt(this.state.startMin) + ' – ' + this.fmt(this.state.endMin) + ' · ' + this.minBreak + ' min minimum break') + '</p>' +
+      sections + '</body></html>';
+    const frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;';
+    frame.srcdoc = doc;
+    frame.onload = () => {
+      setTimeout(() => {
+        try { frame.contentWindow.focus(); frame.contentWindow.print(); }
+        catch (e) { const w = window.open('', '_blank'); if (w) { w.document.write(doc); w.document.close(); w.focus(); w.print(); } }
+        setTimeout(() => frame.remove(), 2000);
+      }, 400);
+    };
+    document.body.appendChild(frame);
+  };
+  onNameChange = e => this.setState({ agendaName: e.target.value });
+  onNameDraft = e => this.setState({ nameDraft: e.target.value });
+  onNameKey = e => {
+    if (e.key === 'Enter') this.onShare();
+    if (e.key === 'Escape') this.setState({ naming: false });
+  };
+  nameRef = (el) => { this._nameInput = el; };
+  onNamingCancel = () => this.setState({ naming: false, shareUrl: null, importing: false, importDraft: '', importError: null });
+  onImportOpen = () => {
+    this.setState({ naming: true, importing: true, importDraft: '', importError: null });
+    setTimeout(() => { if (this._importInput) this._importInput.focus(); }, 40);
+  };
+  importRef = (el) => { this._importInput = el; };
+  onImportDraft = e => this.setState({ importDraft: e.target.value });
+  onImportApply = () => {
+    const raw = (this.state.importDraft || '').trim();
+    if (!raw) return;
+    let code = raw;
+    try {
+      if (/^https?:/.test(raw)) code = new URL(raw).searchParams.get('s') || raw;
+      else if (raw.indexOf('s=') === 0) code = raw.slice(2);
+    } catch (e) { /* treat as a bare code */ }
+    try {
+      const d = this.decode(code);
+      if (this.apply(d, 'Imported schedule')) {
+        this.setState({ naming: false, importing: false, importDraft: '', importError: null });
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    this.setState({ importError: 'That code could not be read.' });
+  };
+  urlRef = (el) => { this._urlInput = el; };
+  onUrlFocus = (e) => { e.target.select(); };
+  onReset = () => {
+    try {
+      Object.keys(window.localStorage).forEach(k => { if (k.indexOf('festival-weekend-schedule') === 0) window.localStorage.removeItem(k); });
+    } catch (e) { /* ignore */ }
+    try {
+      const p = new URLSearchParams(window.location.search);
+      p.delete('s');
+      const q = p.toString();
+      window.history.replaceState(null, '', window.location.pathname + (q ? '?' + q : ''));
+    } catch (e) { /* ignore */ }
+    window.location.reload();
+  };
+  onShare = () => {
+    if (!this.state.naming) {
+      this.setState({ naming: true, nameDraft: this.state.agendaName || 'Festival Weekend Schedule' });
+      setTimeout(() => { if (this._nameInput) { this._nameInput.focus(); this._nameInput.select(); } }, 40);
+      return;
+    }
+    const name = (this.state.nameDraft || '').trim() || 'Festival Weekend Schedule';
+    const code = this.encode(Object.assign(this.snapshot(), { name: name }));
+    // carry the payload in the query string: fragments are dropped by some
+    // hosts and chat clients when a link is pasted into a fresh tab
+    let url;
+    try {
+      const u = new URL(this.outerUrl());
+      u.searchParams.set('s', code);
+      u.hash = '';
+      url = u.toString();
+    } catch (e) {
+      url = window.location.origin + window.location.pathname + '?s=' + code;
+    }
+    try {
+      const own = new URL(window.location.href);
+      own.searchParams.set('s', code);
+      window.history.replaceState(null, '', own.pathname + own.search);
+    } catch (e) { /* ignore */ }
+    const done = (msg) => {
+      this.setState({ shareNote: msg });
+      clearTimeout(this._shareT);
+      this._shareT = setTimeout(() => this.setState({ shareNote: null }), 2600);
+    };
+    const legacyCopy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, url.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    };
+    const reveal = () => {
+      this.setState({ agendaName: name, naming: true, shareUrl: url, shareNote: null });
+      setTimeout(() => { if (this._urlInput) { this._urlInput.focus(); this._urlInput.select(); } }, 40);
+    };
+    const succeed = () => { this.setState({ agendaName: name, naming: false, shareUrl: null }); done('Copied'); };
+    // try the synchronous path first — it survives stricter user-gesture rules
+    if (legacyCopy()) { succeed(); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { navigator.clipboard.writeText(url).then(succeed, reveal); } catch (e) { reveal(); }
+    } else { reveal(); }
+  };
+
+  componentDidMount() {
+    try {
+      const hash = window.location.hash || '';
+      let qs = new URLSearchParams(window.location.search).get('s');
+
+      const payload = qs || (hash.indexOf('#s=') === 0 ? hash.slice(3) : '');
+      if (payload) {
+        const d = this.decode(payload);
+        const when = d && d.at ? new Date(d.at) : null;
+        this._hydrated = true;
+        if (this.apply(d, when ? 'Shared snapshot · ' + when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Shared snapshot')) {
+          window.addEventListener('keydown', this.onKey);
+          return;
+        }
+      }
+    } catch (e) { /* fall through to local copy */ }
+    try {
+      const raw = window.localStorage.getItem(STORE);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && d.seed === DEFAULT_SEED && Array.isArray(d.days)) this.setState({ seed: d.seed, agendaName: d.name || '', days: d.days, altDays: d.altDays || cloneDays(DEFAULT_DAYS_2), dayCount: d.dayCount, startMin: d.startMin, endMin: d.endMin, minBreak: d.minBreak ?? null, breakColor: d.breakColor ?? null, zoom: d.zoom ?? null });
+      }
+    } catch (e) { /* ignore */ }
+    this._hydrated = true;
+    this.forceUpdate();
+    window.addEventListener('keydown', this.onKey);
+    window.addEventListener('pointerdown', this.onDocPointerDown, true);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('pointerdown', this.onDocPointerDown, true);
+  }
+  onDocPointerDown = (e) => {
+    if (!this.state.selId) return;
+    const t = e.target;
+    if (t && t.closest && (t.closest('[data-block]') || t.closest('[data-keep-selection]'))) return;
+    this.setState({ selId: null });
+  };
+  componentDidUpdate() {
+    if (!this._hydrated) return;
+    const s = this.state;
+    try {
+      if (!s.seed) return;
+      window.localStorage.setItem(STORE, JSON.stringify({ seed: s.seed, name: s.agendaName, days: s.days, altDays: s.altDays, dayCount: s.dayCount, startMin: s.startMin, endMin: s.endMin, minBreak: s.minBreak, breakColor: s.breakColor, zoom: s.zoom }));
+    } catch (e) { /* ignore */ }
+  }
+  onKey = (e) => {
+    if ((e.key === 'Backspace' || e.key === 'Delete') && this.state.selId) {
+      const t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+      e.preventDefault();
+      this.onDelete();
+    }
+    if (e.key === 'Escape') this.setState({ selId: null });
+  };
+
+  /* ---- layout ---- */
+  visibleDays() { return this.state.days; }
+  leadFor(s, isFirst) {
+    if (isFirst) return Math.max(0, s.leadIn ?? 0);
+    return Math.max(this.minBreak, s.leadIn ?? this.minBreak);
+  }
+  place(sessions) {
+    const out = [];
+    let cur = this.state.startMin;
+    sessions.forEach((s, i) => {
+      const lead = this.leadFor(s, i === 0);
+      const start = cur + lead;
+      out.push({
+        session: s, start: start, end: start + s.duration + INTRO, filmStart: start + INTRO,
+        gap: (i > 0 && lead > 0) ? { start: cur, dur: lead, owner: s } : null
+      });
+      cur = start + s.duration + INTRO;
+    });
+    return { rows: out, end: cur };
+  }
+  fmt(m) {
+    m = Math.round(m);
+    const h24 = Math.floor(m / 60) % 24, mm = ('0' + (((m % 60) + 60) % 60)).slice(-2);
+    const ap = h24 >= 12 ? 'pm' : 'am';
+    const h = h24 % 12 === 0 ? 12 : h24 % 12;
+    return h + ':' + mm + ' ' + ap;
+  }
+  dur(m) { const h = Math.floor(m / 60), mm = m % 60; return (h ? h + 'h ' : '') + (mm ? mm + 'm' : (h ? '' : '0m')); }
+  tint(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(',') + ',' + a + ')';
+  }
+
+  /* ---- mutations ---- */
+  setDay(dayId, sessions) {
+    this.setState(s => ({ days: s.days.map(d => d.id === dayId ? Object.assign({}, d, { sessions }) : d) }));
+  }
+  findSession(id) {
+    for (const d of this.state.days) { const s = d.sessions.find(x => x.id === id); if (s) return { day: d, session: s }; }
+    return null;
+  }
+  patchSession(id, patch) {
+    this.setState(s => ({
+      days: s.days.map(d => ({ ...d, sessions: d.sessions.map(x => x.id === id ? Object.assign({}, x, patch) : x) }))
+    }));
+  }
+
+  /* ---- drag to move ---- */
+  startDrag = (e, sessionId) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const starts = {};
+    this.state.days.forEach(d => this.place(d.sessions).rows.forEach(r => { starts[r.session.id] = r.start; }));
+    this.drag = { id: sessionId, grab: e.clientY - rect.top, moved: false, starts: starts };
+    this.setState({ selId: sessionId, dragId: sessionId });
+    window.addEventListener('pointermove', this.moveDrag);
+    window.addEventListener('pointerup', this.endDrag);
+  };
+  moveDrag = (e) => {
+    const info = this.drag;
+    if (!info) return;
+    info.moved = true;
+    if (info.raf) return;
+    info.raf = requestAnimationFrame(() => { info.raf = null; });
+    const vis = this.visibleDays();
+    let target = null, rect = null, best = Infinity;
+    vis.forEach(d => {
+      const el = this.cols[d.id];
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const dist = e.clientX < r.left ? r.left - e.clientX : (e.clientX > r.right ? e.clientX - r.right : 0);
+      if (dist < best) { best = dist; target = d; rect = r; }
+    });
+    if (!target) return;
+    const found = this.findSession(info.id);
+    if (!found) return;
+    const minute = this.state.startMin + (e.clientY - rect.top - info.grab) / this.pxPerMin;
+    const desired = Math.round(minute / 5) * 5;
+    // measure against the layout as it was when the drag began, so the
+    // insertion point can't oscillate as the schedule reflows underneath
+    const others = target.sessions.filter(x => x.id !== info.id).slice()
+      .sort((a, b) => (info.starts[a.id] ?? 0) - (info.starts[b.id] ?? 0));
+    let idx = others.length;
+    for (let i = 0; i < others.length; i++) {
+      const st0 = info.starts[others[i].id];
+      if (st0 == null) continue;
+      if (desired < st0 + (others[i].duration + INTRO) / 2) { idx = i; break; }
+    }
+    const prev = idx > 0 ? others[idx - 1] : null;
+    const prevEnd = prev ? (info.starts[prev.id] ?? this.state.startMin) + prev.duration + INTRO : this.state.startMin;
+    const lead = idx === 0 ? Math.max(0, desired - this.state.startMin) : Math.max(this.minBreak, desired - prevEnd);
+    const sig = target.id + ':' + idx + ':' + lead;
+    if (info.sig === sig) return;
+    info.sig = sig;
+    const moving = Object.assign({}, found.session, { leadIn: lead });
+    const next = this.anchor(others.slice(0, idx).concat([moving], others.slice(idx)), info.starts, info.id);
+    this.setState(s => ({
+      days: s.days.map(d => {
+        if (d.id === target.id) return Object.assign({}, d, { sessions: next });
+        if (d.id === found.day.id) return Object.assign({}, d, { sessions: this.anchor(d.sessions.filter(x => x.id !== info.id), info.starts, info.id) });
+        return d;
+      })
+    }));
+  };
+  // keep every untouched session pinned to the clock time it already had
+  anchor(list, starts, movingId) {
+    let cur = this.state.startMin;
+    return list.map((s, i) => {
+      let out = s;
+      if (s.id !== movingId && starts && starts[s.id] != null) {
+        const want = starts[s.id];
+        const lead = i === 0 ? Math.max(0, want - cur) : Math.max(this.minBreak, want - cur);
+        out = Object.assign({}, s, { leadIn: lead });
+      }
+      cur = cur + this.leadFor(out, i === 0) + out.duration + INTRO;
+      return out;
+    });
+  }
+  endDrag = () => {
+    this.drag = null;
+    this.setState({ dragId: null });
+    window.removeEventListener('pointermove', this.moveDrag);
+    window.removeEventListener('pointerup', this.endDrag);
+  };
+
+  /* ---- drag to resize ---- */
+  startResize = (e, kind, sessionId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const found = this.findSession(sessionId);
+    if (!found) return;
+    const isFirst = found.day.sessions[0] && found.day.sessions[0].id === sessionId;
+    this.rz = { kind, id: sessionId, y: e.clientY, orig: kind === 'session' ? found.session.duration : this.leadFor(found.session, isFirst) };
+    if (kind === 'session') this.setState({ selId: sessionId });
+    window.addEventListener('pointermove', this.moveResize);
+    window.addEventListener('pointerup', this.endResize);
+  };
+  moveResize = (e) => {
+    const r = this.rz;
+    if (!r) return;
+    const delta = (e.clientY - r.y) / this.pxPerMin;
+    let next = Math.round((r.orig + delta) / 5) * 5;
+    if (r.kind === 'session') next = Math.max(10, Math.min(400, next));
+    else next = Math.max(this.minBreak, Math.min(240, next));
+    this.patchSession(r.id, r.kind === 'session' ? { duration: next } : { leadIn: next });
+  };
+  endResize = () => {
+    this.rz = null;
+    window.removeEventListener('pointermove', this.moveResize);
+    window.removeEventListener('pointerup', this.endResize);
+  };
+
+  /* ---- form handlers ---- */
+  setDraft(patch) { this.setState(s => ({ draft: Object.assign({}, s.draft, patch) })); }
+  onDraftTitle = e => this.setDraft({ title: e.target.value });
+  onDraftDuration = e => this.setDraft({ duration: Math.max(5, parseInt(e.target.value || '0', 10) || 5) });
+  onDraftDay = e => this.setDraft({ dayId: e.target.value });
+  onAdd = () => {
+    const d = this.state.draft;
+    const day = this.state.days.find(x => x.id === d.dayId) || this.visibleDays()[0];
+    const s = mk(d.title.trim() || (d.type === 'feature' ? 'Untitled feature' : 'Untitled shorts block'), d.type, d.duration, d.color);
+    this.setDay(day.id, day.sessions.concat([s]));
+    this.setState({ draft: Object.assign({}, d, { title: '' }) });
+  };
+  onSelTitle = e => this.patchSession(this.state.selId, { title: e.target.value });
+  onSelDuration = e => this.patchSession(this.state.selId, { duration: Math.max(5, parseInt(e.target.value || '0', 10) || 5) });
+  onDeselect = () => this.setState({ selId: null });
+  onDelete = () => {
+    const id = this.state.selId;
+    this.setState(s => ({ selId: null, days: s.days.map(d => Object.assign({}, d, { sessions: d.sessions.filter(x => x.id !== id) })) }));
+  };
+  onDuplicate = () => {
+    const f = this.findSession(this.state.selId);
+    if (!f) return;
+    const copy = Object.assign({}, f.session, { id: uid() });
+    const list = f.day.sessions.slice();
+    list.splice(list.findIndex(x => x.id === f.session.id) + 1, 0, copy);
+    this.setDay(f.day.id, list);
+    this.setState({ selId: copy.id });
+  };
+  onStartChange = e => {
+    const [h, m] = e.target.value.split(':').map(Number);
+    if (!isNaN(h)) this.setState(s => ({ startMin: Math.min(h * 60 + (m || 0), s.endMin - 60) }));
+  };
+  onEndChange = e => {
+    const [h, m] = e.target.value.split(':').map(Number);
+    if (!isNaN(h)) this.setState(s => ({ endMin: Math.max(h * 60 + (m || 0), s.startMin + 60) }));
+  };
+  onZoomChange = e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) this.setState({ zoom: v });
+  };
+  onMinBreakChange = e => {
+    const v = Math.max(5, parseInt(e.target.value || '0', 10) || 5);
+    this.setState({ minBreak: v });
+  };
+
+  swatchRow(active, onPick) {
+    return PALETTE.map(c => ({
+      color: c,
+      ring: (active && active.toLowerCase() === c.toLowerCase()) ? '2px solid #2A2520' : '1px solid rgba(42,37,32,0.12)',
+      onClick: () => onPick(c)
+    }));
+  }
+
+  renderVals() {
+    const st = this.state, ppm = this.pxPerMin;
+    const gridH = Math.max(320, (st.endMin - st.startMin) * ppm);
+    const hourLabels = [], gridLines = [];
+    for (let m = st.startMin - (st.startMin % 30); m <= st.endMin; m += 30) {
+      if (m < st.startMin) continue;
+      const top = (m - st.startMin) * ppm;
+      gridLines.push({ top: top, color: m % 60 === 0 ? '#EFE8DB' : '#F7F2E9' });
+      if (m % 60 === 0) hourLabels.push({ top: top, label: this.fmt(m) });
+    }
+
+    const sel = this.findSession(st.selId);
+    const days = this.visibleDays().map(day => {
+      const { rows, end } = this.place(day.sessions);
+      const blocks = [];
+      rows.forEach(r => {
+        const s = r.session, col = this.colorOf(s), h = (s.duration + INTRO) * ppm;
+        const t = TYPES.find(x => x.id === s.type) || TYPES[0];
+        const isSel = s.id === st.selId, isDrag = s.id === st.dragId;
+        blocks.push({
+          id: s.id, top: (r.start - st.startMin) * ppm, h: h, z: isDrag ? 30 : 2,
+          bg: this.tint(col, isDrag ? 0.26 : 0.16), bar: col, barW: 4,
+          borderStyle: 'solid', borderCol: this.tint(col, 0.5),
+          shadow: isDrag ? '0 10px 26px -8px rgba(61,46,31,0.3)' : (isSel ? '0 0 0 2px #B8552E' : '0 1px 2px rgba(61,46,31,0.06)'), lineH: 1.2,
+          cursor: isDrag ? 'grabbing' : 'grab', outerPad: '1.5px 0',
+          title: s.title, titleFont: "'Newsreader',Georgia,serif", titleSize: 15, titleWeight: 500, titleCol: '#2A2520',
+          sub: this.fmt(r.filmStart) + ' – ' + this.fmt(r.end) + ' · ' + s.duration + ' min',
+          introH: Math.max(13, INTRO * ppm + 4), introTint: this.tint(col, 0.34),
+          introLabel: this.fmt(r.start) + ' · intro ' + INTRO + ' min',
+          showIntro: h >= 30, showIntroText: true,
+          showMeta: h >= 42, showTitle: h >= 20, pad: h >= 24 ? '5px 9px' : '0 9px',
+          onDown: (e) => this.startDrag(e, s.id),
+          onResize: (e) => this.startResize(e, 'session', s.id)
+        });
+        if (r.gap) {
+          const gh = Math.max(r.gap.dur * ppm, 17), bc = this.breakColor, tight = gh < 26;
+          blocks.push({
+            id: s.id + '-gap', top: (r.gap.start - st.startMin) * ppm, h: gh, lineH: tight ? 1 : 1.2, z: 1,
+            bg: this.tint(bc, 0.1), bar: 'transparent', barW: 0,
+            borderStyle: 'dashed', borderCol: this.tint(bc, 0.55),
+            shadow: 'none', cursor: 'default', outerPad: tight ? '0' : '1.5px 0', introH: 0, introTint: 'transparent', introLabel: '', showIntro: false, showIntroText: false,
+            title: 'Break · ' + r.gap.dur + ' min', titleFont: "'IBM Plex Mono',monospace", titleSize: tight ? 9 : 10.5, titleWeight: 400, titleCol: '#5B4A3A',
+            pad: tight ? '0 7px' : '5px 9px',
+            sub: this.fmt(r.gap.start) + ' – ' + this.fmt(r.gap.start + r.gap.dur), showMeta: gh >= 42, showTitle: true,
+            onDown: () => {}, onResize: (e) => this.startResize(e, 'break', r.gap.owner.id)
+          });
+        }
+      });
+      const total = day.sessions.reduce((a, s) => a + s.duration, 0);
+      return {
+        id: day.id, label: day.label, date: day.date, blocks: blocks,
+        stat: day.sessions.length + (day.sessions.length === 1 ? ' film · ' : ' films · ') + this.dur(total),
+        overrun: end > st.endMin ? '+' + Math.round(end - st.endMin) + ' min over' : null,
+        colRef: (el) => { this.cols[day.id] = el; }
+      };
+    });
+
+    const parked = 0;
+
+    return {
+      rangeLabel: (st.dayCount === 3 ? 'Friday – Sunday' : 'Saturday – Sunday') + '  ·  ' + this.fmt(st.startMin) + ' – ' + this.fmt(st.endMin) + '  ·  ' + this.minBreak + ' min minimum break',
+      headerH: 78, gridH: gridH, hourLabels: hourLabels, gridLines: gridLines, days: days,
+      startValue: ('0' + Math.floor(st.startMin / 60)).slice(-2) + ':' + ('0' + (st.startMin % 60)).slice(-2),
+      endValue: ('0' + Math.floor(st.endMin / 60)).slice(-2) + ':' + ('0' + (st.endMin % 60)).slice(-2),
+      minBreakValue: this.minBreak,
+      zoomValue: ppm, zoomLabel: Math.round((ppm / 1.05) * 100) + '%', onZoomChange: this.onZoomChange,
+      onExportPdf: this.onExportPdf, onExportCsv: this.onExportCsv,
+      agendaName: st.agendaName || '', onNameChange: this.onNameChange,
+      naming: !!st.naming, nameDraft: st.nameDraft || '', onNameDraft: this.onNameDraft, onNameKey: this.onNameKey,
+      nameRef: this.nameRef, onNamingCancel: this.onNamingCancel,
+      shareUrl: (!st.importing && st.shareUrl) || null, noShareUrl: !st.importing && !st.shareUrl,
+      importing: !!st.importing, importDraft: st.importDraft || '', importError: st.importError || null,
+      onImportOpen: this.onImportOpen, onImportDraft: this.onImportDraft, onImportApply: this.onImportApply, importRef: this.importRef, urlRef: this.urlRef, onUrlFocus: this.onUrlFocus,
+      shareAction: st.importing ? 'Close' : st.shareUrl ? 'Copy share link' : (st.naming ? 'Copy link' : (st.shareNote || 'Copy share link')),
+      onReset: this.onReset, onShare: this.onShare, shareLabel: st.shareNote || 'Copy share link', snapshotNote: st.snapshotNote || null,
+      onStartChange: this.onStartChange, onEndChange: this.onEndChange, onMinBreakChange: this.onMinBreakChange,
+      dayCountOptions: [3, 2].map(n => ({
+        label: n === 3 ? 'Fri – Sun' : 'Sat – Sun',
+        bg: st.dayCount === n ? '#2A2520' : 'transparent',
+        fg: st.dayCount === n ? '#FFFDF8' : '#6B6056',
+        onClick: () => this.setState(s => s.dayCount === n ? null : ({
+          dayCount: n, selId: null, days: s.altDays, altDays: s.days,
+          draft: Object.assign({}, s.draft, { dayId: 'sat' })
+        }))
+      })),
+      breakSwatches: ['#8A7D6D', '#AFA594', '#CFC5B2', '#5B4A3A'].map(c => ({
+        color: c,
+        ring: this.breakColor.toLowerCase() === c.toLowerCase() ? '2px solid #2A2520' : '1px solid rgba(42,37,32,0.12)',
+        onClick: () => this.setState({ breakColor: c })
+      })),
+      editing: !!sel, notEditing: !sel,
+      draft: st.draft,
+      onDraftTitle: this.onDraftTitle, onDraftDuration: this.onDraftDuration, onDraftDay: this.onDraftDay, onAdd: this.onAdd,
+      dayOptions: this.visibleDays().map(d => ({ id: d.id, label: d.label })),
+      draftTypeOptions: TYPES.map(t => ({
+        label: t.label,
+        bg: st.draft.type === t.id ? this.tint(this.typeColor(t.id), 0.14) : '#FBF8F2',
+        border: st.draft.type === t.id ? this.tint(this.typeColor(t.id), 0.5) : '#E6DDD0',
+        fg: '#3D2E1F',
+        onClick: () => this.setDraft({ type: t.id })
+      })),
+      draftSwatches: this.swatchRow(st.draft.color || this.typeColor(st.draft.type), c => this.setDraft({ color: c })),
+      sel: sel ? {
+        title: sel.session.title, duration: sel.session.duration,
+        timeLabel: (() => {
+          const row = this.place(sel.day.sessions).rows.find(r => r.session.id === sel.session.id);
+          return row ? this.fmt(row.start) + ' – ' + this.fmt(row.end) + ' · ' + sel.day.label : '';
+        })()
+      } : { title: '', duration: 0, timeLabel: '' },
+      selTypeOptions: TYPES.map(t => ({
+        label: t.label,
+        bg: sel && sel.session.type === t.id ? this.tint(this.colorOf(sel.session), 0.14) : '#FBF8F2',
+        border: sel && sel.session.type === t.id ? this.tint(this.colorOf(sel.session), 0.5) : '#E6DDD0',
+        fg: '#3D2E1F',
+        onClick: () => this.patchSession(st.selId, { type: t.id })
+      })),
+      selSwatches: this.swatchRow(sel ? this.colorOf(sel.session) : null, c => this.patchSession(st.selId, { color: c })),
+      onSelTitle: this.onSelTitle, onSelDuration: this.onSelDuration,
+      onDeselect: this.onDeselect, onDelete: this.onDelete, onDuplicate: this.onDuplicate,
+      legend: [
+        { color: this.typeColor('feature'), label: 'Feature film — includes ' + INTRO + ' min intro' },
+        { color: this.props.galaColor ?? '#567A63', label: 'Gala screening' },
+        { color: this.typeColor('fiction'), label: 'Short films (fiction / doc)' },
+        { color: this.breakColor, label: 'Break — ' + this.minBreak + ' min minimum' }
+      ],
+      parkedNote: null
+    };
+  }
+}
+
+</script>
+</body>
+</html>
