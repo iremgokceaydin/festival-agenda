@@ -1,4 +1,4 @@
-import { INTRO, TYPES } from './defaults';
+import { FESTIVAL_DATE_LABELS, INTRO, TYPES } from './defaults';
 import { colorOf, fmt, place, tint } from './schedule';
 import type { Day } from './types';
 
@@ -147,7 +147,7 @@ export function buildDayView(
   return {
     id: day.id,
     label: day.label,
-    date: day.date,
+    date: FESTIVAL_DATE_LABELS[day.id] || '',
     blocks,
     stat: day.sessions.length + (day.sessions.length === 1 ? ' film · ' : ' films · ') + totalLabel(total),
     overrun: end > endMin ? '+' + Math.round(end - endMin) + ' min over' : null

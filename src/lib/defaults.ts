@@ -16,6 +16,15 @@ export const DEFAULT_GALA_COLOR = '#3F6B52';
 export const DEFAULT_BREAK_COLOR = '#8A7D6D';
 export const DEFAULT_PX_PER_MIN = 1.05;
 
+// The festival's actual calendar dates — fixed by the event, not saved as
+// part of any schedule/snapshot, so every snapshot always shows the real
+// current dates rather than whatever was in effect when it was saved.
+export const FESTIVAL_DATE_LABELS: Record<string, string> = {
+  fri: 'Nov 6',
+  sat: 'Nov 7',
+  sun: 'Nov 8'
+};
+
 export function uid(): string {
   return Math.random().toString(36).slice(2, 9);
 }
@@ -28,7 +37,6 @@ export const DEFAULT_DAYS: Day[] = [
   {
     id: 'fri',
     label: 'Friday',
-    date: 'Nov 6',
     sessions: [
       Object.assign(mk('Feature #1', 'feature', 100), { leadIn: 360 }),
       mk('Feature #2', 'feature', 100),
@@ -38,7 +46,6 @@ export const DEFAULT_DAYS: Day[] = [
   {
     id: 'sat',
     label: 'Saturday',
-    date: 'Nov 7',
     sessions: [
       Object.assign(mk('Shorts — Fiction #1', 'fiction', 90), { leadIn: 90 }),
       mk('Shorts — Fiction #2', 'fiction', 90),
@@ -49,7 +56,6 @@ export const DEFAULT_DAYS: Day[] = [
   {
     id: 'sun',
     label: 'Sunday',
-    date: 'Nov 8',
     sessions: [
       Object.assign(mk('Shorts — Documentary #1', 'doc', 90), { leadIn: 30 }),
       mk('Feature #6', 'feature', 100),
@@ -64,7 +70,6 @@ export const DEFAULT_DAYS_2: Day[] = [
   {
     id: 'sat',
     label: 'Saturday',
-    date: 'Nov 7',
     sessions: [
       Object.assign(mk('Shorts — Fiction #1', 'fiction', 90), { leadIn: 90 }),
       mk('Shorts — Fiction #2', 'fiction', 90),
@@ -75,7 +80,6 @@ export const DEFAULT_DAYS_2: Day[] = [
   {
     id: 'sun',
     label: 'Sunday',
-    date: 'Nov 8',
     sessions: [
       mk('Shorts — Documentary #1', 'doc', 90),
       mk('Feature #3', 'feature', 100),
@@ -102,7 +106,6 @@ export function seedHash(days: Day[]): string {
     days.map((d) => [
       d.id,
       d.label,
-      d.date,
       d.sessions.map((s) => [s.title, s.type, s.duration, s.color || '', s.leadIn ?? '', s.gala ? 1 : 0])
     ])
   );

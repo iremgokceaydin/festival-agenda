@@ -13,7 +13,6 @@ export interface Session {
 export interface Day {
   id: string;
   label: string;
-  date: string;
   sessions: Session[];
 }
 

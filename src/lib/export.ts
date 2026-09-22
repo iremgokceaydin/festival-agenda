@@ -1,4 +1,4 @@
-import { INTRO, TYPES } from './defaults';
+import { FESTIVAL_DATE_LABELS, INTRO, TYPES } from './defaults';
 import { fmt, place } from './schedule';
 import type { Day } from './types';
 
@@ -29,7 +29,7 @@ export function exportCsv(days: Day[], startMin: number, minBreak: number, agend
   const q = (v: unknown) => '"' + String(v).replace(/"/g, '""') + '"';
   const lines = [['Day', 'Date', 'Start', 'End', 'Title', 'Kind', 'Minutes'].join(',')];
   exportRows(days, startMin, minBreak).forEach((r) => {
-    lines.push([q(r.day.label), q(r.day.date), q(fmt(r.start)), q(fmt(r.end)), q(r.title), q(r.kind), r.dur].join(','));
+    lines.push([q(r.day.label), q(FESTIVAL_DATE_LABELS[r.day.id] || ''), q(fmt(r.start)), q(fmt(r.end)), q(r.title), q(r.kind), r.dur].join(','));
   });
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
@@ -80,7 +80,7 @@ export function exportPdf(days: Day[], startMin: number, endMin: number, minBrea
         '<section><h2>' +
         esc(g.day.label) +
         ' <span class="date">' +
-        esc(g.day.date) +
+        esc(FESTIVAL_DATE_LABELS[g.day.id] || '') +
         '</span></h2>' +
         '<p class="meta">' +
         g.rows.filter((r) => !r.isBreak).length +
