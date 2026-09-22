@@ -1,7 +1,12 @@
 import { DEFAULT_SEED } from './defaults';
 import type { Day } from './types';
 
-const STORE = 'festival-weekend-schedule-v1';
+// Each snapshot (identified by its share id) gets its own draft slot, so
+// switching between snapshots via the header dropdown never clobbers another
+// snapshot's unsaved local edits. `null` id is the scratch working copy that
+// exists before anything has ever been shared.
+const DRAFT_PREFIX = 'festival-weekend-schedule-draft:';
+const LOCAL_ID = 'local';
 
 export interface Draft {
   seed: string;
@@ -16,31 +21,37 @@ export interface Draft {
   zoom: number | null;
 }
 
-export function loadDraft(): Draft | null {
+function keyFor(id: string | null): string {
+  return DRAFT_PREFIX + (id || LOCAL_ID);
+}
+
+export function loadDraft(id: string | null): Draft | null {
   try {
-    const raw = window.localStorage.getItem(STORE);
+    const raw = window.localStorage.getItem(keyFor(id));
     if (!raw) return null;
     const d = JSON.parse(raw);
-    if (d && d.seed === DEFAULT_SEED && Array.isArray(d.days)) return d as Draft;
+    if (!d || !Array.isArray(d.days)) return null;
+    // The scratch copy (no snapshot id) is tied to the app's current default
+    // programme; a shared snapshot's draft has no such dependency.
+    if (id === null && d.seed !== DEFAULT_SEED) return null;
+    return d as Draft;
   } catch {
     /* ignore */
   }
   return null;
 }
 
-export function saveDraft(draft: Draft): void {
+export function saveDraft(id: string | null, draft: Draft): void {
   try {
-    window.localStorage.setItem(STORE, JSON.stringify(draft));
+    window.localStorage.setItem(keyFor(id), JSON.stringify(draft));
   } catch {
     /* ignore */
   }
 }
 
-export function clearDraft(): void {
+export function clearDraft(id: string | null): void {
   try {
-    Object.keys(window.localStorage).forEach((k) => {
-      if (k.indexOf('festival-weekend-schedule') === 0) window.localStorage.removeItem(k);
-    });
+    window.localStorage.removeItem(keyFor(id));
   } catch {
     /* ignore */
   }

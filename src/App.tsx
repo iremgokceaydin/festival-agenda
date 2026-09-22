@@ -19,6 +19,7 @@ import { exportCsv, exportPdf } from './lib/export';
 import { colorOf, findSession, fmt, place } from './lib/schedule';
 import { clearDraft, loadDraft, saveDraft } from './lib/storage';
 import { addSnapshotEntry, loadSnapshotList, type SnapshotEntry } from './lib/snapshots';
+import { statesDiffer } from './lib/diff';
 import type { Day, Session, SessionType, Snapshot } from './lib/types';
 import { useDragResize } from './hooks/useDragResize';
 import Header from './components/Header';
@@ -27,6 +28,32 @@ import ScheduleGrid from './components/ScheduleGrid';
 import ConfirmModal from './components/ConfirmModal';
 
 const pad2 = (n: number) => ('0' + n).slice(-2);
+
+interface ComparableFields {
+  name: string;
+  days: Day[];
+  altDays: Day[];
+  dayCount: 2 | 3;
+  startMin: number;
+  endMin: number;
+  minBreak: number | null;
+  breakColor: string | null;
+  zoom: number | null;
+}
+
+function toComparable(x: ComparableFields): ComparableFields {
+  return {
+    name: x.name,
+    days: x.days,
+    altDays: x.altDays,
+    dayCount: x.dayCount,
+    startMin: x.startMin,
+    endMin: x.endMin,
+    minBreak: x.minBreak,
+    breakColor: x.breakColor,
+    zoom: x.zoom
+  };
+}
 
 export default function App() {
   const [dayCount, setDayCount] = useState<2 | 3>(3);
@@ -55,6 +82,8 @@ export default function App() {
   const [draftSession, setDraftSession] = useState<DraftSession>({ title: '', type: 'feature', duration: 100, dayId: 'sat', color: null });
   const [savedSnapshots, setSavedSnapshots] = useState<SnapshotEntry[]>(() => loadSnapshotList());
   const [pendingOpen, setPendingOpen] = useState<string | null>(null);
+  const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>(null);
+  const [serverBaseline, setServerBaseline] = useState<ComparableFields | null>(null);
 
   const hydratedRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -66,19 +95,52 @@ export default function App() {
   const breakColorValue = breakColor ?? DEFAULT_BREAK_COLOR;
   const pxPerMin = zoom ?? DEFAULT_PX_PER_MIN;
 
-  function applySnapshot(d: Partial<Snapshot> | null | undefined, note: string | null): boolean {
-    if (!d || !Array.isArray(d.days)) return false;
-    setDays(d.days);
-    setAltDays(d.altDays && d.altDays.length ? d.altDays : cloneDays(DEFAULT_DAYS_2));
-    setDayCount((d.dayCount as 2 | 3) ?? 3);
-    setStartMin(d.startMin ?? 660);
-    setEndMin(d.endMin ?? 1380);
-    setSeed(d.seed || DEFAULT_SEED);
-    setAgendaName(d.name || '');
-    setZoom(d.zoom ?? null);
-    setMinBreak(d.minBreak ?? null);
-    setBreakColor(d.breakColor ?? null);
+  // Resolve a (possibly partial) snapshot's fallbacks once, so the object
+  // actually applied to state and the object used for dirty-comparison are
+  // always identical — cloneDays() mints fresh random ids on every call, so
+  // resolving twice independently would make an untouched snapshot look
+  // "dirty" the instant it loads.
+  function resolveSnapshot(d: Partial<Snapshot>): ComparableFields {
+    return {
+      name: d.name || '',
+      days: d.days!,
+      altDays: d.altDays && d.altDays.length ? d.altDays : cloneDays(DEFAULT_DAYS_2),
+      dayCount: (d.dayCount as 2 | 3) ?? 3,
+      startMin: d.startMin ?? 660,
+      endMin: d.endMin ?? 1380,
+      minBreak: d.minBreak ?? null,
+      breakColor: d.breakColor ?? null,
+      zoom: d.zoom ?? null
+    };
+  }
+
+  function applyResolved(r: ComparableFields, seedValue: string, note: string | null): void {
+    setDays(r.days);
+    setAltDays(r.altDays);
+    setDayCount(r.dayCount);
+    setStartMin(r.startMin);
+    setEndMin(r.endMin);
+    setSeed(seedValue);
+    setAgendaName(r.name);
+    setZoom(r.zoom);
+    setMinBreak(r.minBreak);
+    setBreakColor(r.breakColor);
     setSnapshotNote(note || null);
+  }
+
+  // Load a server-saved snapshot, but prefer this browser's own unsaved
+  // local edits for it when they differ — and flag that they're unsaved.
+  function hydrateSnapshot(id: string, serverData: Snapshot, baseNote: string): boolean {
+    if (!Array.isArray(serverData?.days)) return false;
+    const serverResolved = resolveSnapshot(serverData);
+    const local = loadDraft(id);
+    if (local && statesDiffer(serverResolved, toComparable(local))) {
+      applyResolved(toComparable(local), local.seed, baseNote);
+    } else {
+      applyResolved(serverResolved, serverData.seed || DEFAULT_SEED, baseNote);
+    }
+    setServerBaseline(serverResolved);
+    setActiveSnapshotId(id);
     return true;
   }
 
@@ -89,9 +151,9 @@ export default function App() {
       if (qs) {
         try {
           const d = await fetchShare(qs);
-          const at = (d as Snapshot).at;
+          const at = d.at;
           const when = at ? new Date(at) : null;
-          if (applySnapshot(d, when ? 'Shared snapshot · ' + when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Shared snapshot')) {
+          if (hydrateSnapshot(qs, d, when ? 'Shared snapshot · ' + when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Shared snapshot')) {
             hydratedRef.current = true;
             return;
           }
@@ -99,7 +161,7 @@ export default function App() {
           /* fall through to local draft */
         }
       }
-      const draft = loadDraft();
+      const draft = loadDraft(null);
       if (draft) {
         setSeed(draft.seed);
         setAgendaName(draft.name || '');
@@ -117,11 +179,20 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Autosave the working draft locally once hydrated.
+  // Autosave the working draft locally once hydrated, scoped to whichever
+  // snapshot (or the id-less scratch copy) is currently active.
   useEffect(() => {
     if (!hydratedRef.current || !seed) return;
-    saveDraft({ seed, name: agendaName, days, altDays, dayCount, startMin, endMin, minBreak, breakColor, zoom });
-  }, [seed, agendaName, days, altDays, dayCount, startMin, endMin, minBreak, breakColor, zoom]);
+    saveDraft(activeSnapshotId, { seed, name: agendaName, days, altDays, dayCount, startMin, endMin, minBreak, breakColor, zoom });
+  }, [activeSnapshotId, seed, agendaName, days, altDays, dayCount, startMin, endMin, minBreak, breakColor, zoom]);
+
+  // Whether the live state has diverged from the last known server-saved
+  // version of the currently active snapshot.
+  const isDirty = useMemo(() => {
+    if (!serverBaseline) return false;
+    return statesDiffer(serverBaseline, toComparable({ name: agendaName, days, altDays, dayCount, startMin, endMin, minBreak, breakColor, zoom }));
+  }, [serverBaseline, agendaName, days, altDays, dayCount, startMin, endMin, minBreak, breakColor, zoom]);
+  const displayedSnapshotNote = snapshotNote ? snapshotNote + (isDirty ? ' · changes not saved yet' : '') : null;
 
   // Backspace/Delete removes the selected session; Escape deselects.
   useEffect(() => {
@@ -229,7 +300,7 @@ export default function App() {
   };
 
   const onReset = () => {
-    clearDraft();
+    clearDraft(null);
     try {
       const p = new URLSearchParams(window.location.search);
       p.delete('s');
@@ -256,7 +327,7 @@ export default function App() {
     }
     try {
       const d = await fetchShare(value);
-      applySnapshot(d, 'Opened “' + (d.name || 'snapshot') + '”');
+      hydrateSnapshot(value, d, 'Opened “' + (d.name || 'snapshot') + '”');
     } catch {
       setSnapshotNote('Could not open that snapshot.');
     }
@@ -293,7 +364,7 @@ export default function App() {
     }
     try {
       const d = await fetchShare(code);
-      if (applySnapshot(d, 'Imported schedule')) {
+      if (hydrateSnapshot(code, d, 'Imported schedule')) {
         setNaming(false);
         setImporting(false);
         setImportDraft('');
@@ -342,6 +413,9 @@ export default function App() {
     try {
       const id = await createShare(snapshot);
       setSavedSnapshots(addSnapshotEntry({ id, name, at: snapshot.at }));
+      setActiveSnapshotId(id);
+      setServerBaseline(toComparable(snapshot));
+      setSnapshotNote('Saved snapshot');
       const url = new URL(window.location.href);
       url.searchParams.set('s', id);
       url.hash = '';
@@ -415,7 +489,7 @@ export default function App() {
         agendaName={agendaName}
         onNameChange={setAgendaName}
         rangeLabel={rangeLabel}
-        snapshotNote={snapshotNote}
+        snapshotNote={displayedSnapshotNote}
         dayCount={dayCount}
         onDayCountChange={onDayCountChange}
         startValue={pad2(Math.floor(startMin / 60)) + ':' + pad2(startMin % 60)}
