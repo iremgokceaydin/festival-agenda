@@ -18,11 +18,13 @@ import {
 import { exportCsv, exportPdf } from './lib/export';
 import { colorOf, findSession, fmt, place } from './lib/schedule';
 import { clearDraft, loadDraft, saveDraft } from './lib/storage';
+import { addSnapshotEntry, loadSnapshotList, type SnapshotEntry } from './lib/snapshots';
 import type { Day, Session, SessionType, Snapshot } from './lib/types';
 import { useDragResize } from './hooks/useDragResize';
 import Header from './components/Header';
 import Sidebar, { type DraftSession, type SelectedInfo } from './components/Sidebar';
 import ScheduleGrid from './components/ScheduleGrid';
+import ConfirmModal from './components/ConfirmModal';
 
 const pad2 = (n: number) => ('0' + n).slice(-2);
 
@@ -51,6 +53,8 @@ export default function App() {
   const [days, setDays] = useState<Day[]>(() => cloneDays(DEFAULT_DAYS));
   const [altDays, setAltDays] = useState<Day[]>(() => cloneDays(DEFAULT_DAYS_2));
   const [draftSession, setDraftSession] = useState<DraftSession>({ title: '', type: 'feature', duration: 100, dayId: 'sat', color: null });
+  const [savedSnapshots, setSavedSnapshots] = useState<SnapshotEntry[]>(() => loadSnapshotList());
+  const [pendingOpen, setPendingOpen] = useState<string | null>(null);
 
   const hydratedRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -237,6 +241,27 @@ export default function App() {
     window.location.reload();
   };
 
+  const onOpenSnapshot = (value: string) => {
+    if (!value) return;
+    setPendingOpen(value);
+  };
+  const onOpenSnapshotCancel = () => setPendingOpen(null);
+  const onOpenSnapshotConfirm = async () => {
+    const value = pendingOpen;
+    setPendingOpen(null);
+    if (!value) return;
+    if (value === '__defaults__') {
+      onReset();
+      return;
+    }
+    try {
+      const d = await fetchShare(value);
+      applySnapshot(d, 'Opened “' + (d.name || 'snapshot') + '”');
+    } catch {
+      setSnapshotNote('Could not open that snapshot.');
+    }
+  };
+
   const onNameKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') onShare();
     if (e.key === 'Escape') setNaming(false);
@@ -316,6 +341,7 @@ export default function App() {
     let finalUrl: string;
     try {
       const id = await createShare(snapshot);
+      setSavedSnapshots(addSnapshotEntry({ id, name, at: snapshot.at }));
       const url = new URL(window.location.href);
       url.searchParams.set('s', id);
       url.hash = '';
@@ -405,7 +431,8 @@ export default function App() {
         onZoomChange={setZoom}
         onExportPdf={() => exportPdf(days, startMin, endMin, minBreakValue, agendaName, dayCount)}
         onExportCsv={() => exportCsv(days, startMin, minBreakValue, agendaName)}
-        onReset={onReset}
+        savedSnapshots={savedSnapshots}
+        onOpenSnapshot={onOpenSnapshot}
         naming={naming}
         nameDraft={nameDraft}
         onNameDraft={setNameDraft}
@@ -457,6 +484,13 @@ export default function App() {
           onResize={startResize}
         />
       </div>
+
+      <ConfirmModal
+        open={pendingOpen !== null}
+        message="Are you sure? Make sure you save your current snapshot before opening another one."
+        onConfirm={() => void onOpenSnapshotConfirm()}
+        onCancel={onOpenSnapshotCancel}
+      />
     </div>
   );
 }

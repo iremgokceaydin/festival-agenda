@@ -1,4 +1,5 @@
 import type React from 'react';
+import type { SnapshotEntry } from '../lib/snapshots';
 
 interface Props {
   agendaName: string;
@@ -26,7 +27,8 @@ interface Props {
   onExportPdf: () => void;
   onExportCsv: () => void;
 
-  onReset: () => void;
+  savedSnapshots: SnapshotEntry[];
+  onOpenSnapshot: (value: string) => void;
 
   naming: boolean;
   nameDraft: string;
@@ -300,9 +302,23 @@ export default function Header(props: Props) {
                 </div>
               </div>
             )}
-            <button onClick={props.onReset} title="Discard local changes and reload the default programme" className="hover-panel" style={buttonStyle}>
-              Reset
-            </button>
+            <select
+              value=""
+              onChange={(e) => props.onOpenSnapshot(e.target.value)}
+              aria-label="Open a saved snapshot"
+              title="Open a saved snapshot"
+              style={{ ...buttonStyle, maxWidth: 168, cursor: 'pointer' }}
+            >
+              <option value="" disabled>
+                Open snapshot…
+              </option>
+              <option value="__defaults__">Start fresh (defaults)</option>
+              {props.savedSnapshots.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} — {formatSnapshotDate(s.at)}
+                </option>
+              ))}
+            </select>
             <button onClick={props.onShare} className="hover-panel" style={{ ...buttonStyle, width: 142, textAlign: 'center' }}>
               {props.shareAction}
             </button>
@@ -311,6 +327,10 @@ export default function Header(props: Props) {
       </div>
     </header>
   );
+}
+
+function formatSnapshotDate(at: number): string {
+  return new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 const buttonStyle: React.CSSProperties = {
