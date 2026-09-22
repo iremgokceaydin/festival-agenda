@@ -28,7 +28,7 @@ export const DEFAULT_DAYS: Day[] = [
   {
     id: 'fri',
     label: 'Friday',
-    date: 'Oct 16',
+    date: 'Nov 6',
     sessions: [
       Object.assign(mk('Feature #1', 'feature', 100), { leadIn: 360 }),
       mk('Feature #2', 'feature', 100),
@@ -38,7 +38,7 @@ export const DEFAULT_DAYS: Day[] = [
   {
     id: 'sat',
     label: 'Saturday',
-    date: 'Oct 17',
+    date: 'Nov 7',
     sessions: [
       Object.assign(mk('Shorts — Fiction #1', 'fiction', 90), { leadIn: 90 }),
       mk('Shorts — Fiction #2', 'fiction', 90),
@@ -49,7 +49,7 @@ export const DEFAULT_DAYS: Day[] = [
   {
     id: 'sun',
     label: 'Sunday',
-    date: 'Oct 18',
+    date: 'Nov 8',
     sessions: [
       Object.assign(mk('Shorts — Documentary #1', 'doc', 90), { leadIn: 30 }),
       mk('Feature #6', 'feature', 100),
@@ -64,7 +64,7 @@ export const DEFAULT_DAYS_2: Day[] = [
   {
     id: 'sat',
     label: 'Saturday',
-    date: 'Oct 17',
+    date: 'Nov 7',
     sessions: [
       Object.assign(mk('Shorts — Fiction #1', 'fiction', 90), { leadIn: 90 }),
       mk('Shorts — Fiction #2', 'fiction', 90),
@@ -75,7 +75,7 @@ export const DEFAULT_DAYS_2: Day[] = [
   {
     id: 'sun',
     label: 'Sunday',
-    date: 'Oct 18',
+    date: 'Nov 8',
     sessions: [
       mk('Shorts — Documentary #1', 'doc', 90),
       mk('Feature #3', 'feature', 100),
