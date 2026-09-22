@@ -26,18 +26,33 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   }
 
   const id = nanoid(ID_LENGTH);
-  const entry: IndexEntry = { name: (body.name || 'Untitled agenda').slice(0, 200), at: typeof body.at === 'number' ? body.at : Date.now() };
+  const requestedName = ((body.name as string) || 'Untitled agenda').trim().slice(0, 200) || 'Untitled agenda';
+
   try {
     const redis = getRedis();
-    await redis.set(KEY_PREFIX + id, body);
+    const existing = await redis.hgetall<Record<string, IndexEntry>>(INDEX_KEY);
+    const existingNames = new Set(Object.values(existing || {}).map((e) => e.name));
+    const name = uniqueName(requestedName, existingNames);
+
+    const entry: IndexEntry = { name, at: typeof body.at === 'number' ? body.at : Date.now() };
+    await redis.set(KEY_PREFIX + id, { ...body, name });
     // The client JSON-serializes non-string hash values automatically (same
     // as set/get above) — keep this consistent, no manual stringify/parse.
     await redis.hset(INDEX_KEY, { [id]: entry });
+
+    return res.status(201).json({ id, name });
   } catch (e) {
     return res.status(500).json({ error: 'Could not save this agenda.' });
   }
+}
 
-  return res.status(201).json({ id });
+// "Name" -> "Name (1)" -> "Name (2)" ... against every currently saved
+// snapshot name, site-wide (case-sensitive, exact match).
+function uniqueName(base: string, existingNames: Set<string>): string {
+  if (!existingNames.has(base)) return base;
+  let n = 1;
+  while (existingNames.has(`${base} (${n})`)) n++;
+  return `${base} (${n})`;
 }
 
 async function handleList(req: VercelRequest, res: VercelResponse) {

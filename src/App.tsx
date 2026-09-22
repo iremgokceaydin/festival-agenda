@@ -421,11 +421,13 @@ export default function App() {
     };
 
     let finalUrl: string;
+    let finalName: string;
     try {
-      const id = await createShare(snapshot);
-      setSavedSnapshots((cur) => [{ id, name, at: snapshot.at }, ...cur.filter((e) => e.id !== id)]);
+      const { id, name: savedName } = await createShare(snapshot);
+      finalName = savedName;
+      setSavedSnapshots((cur) => [{ id, name: finalName, at: snapshot.at }, ...cur.filter((e) => e.id !== id)]);
       setActiveSnapshotId(id);
-      setServerBaseline(toComparable(snapshot));
+      setServerBaseline(toComparable({ ...snapshot, name: finalName }));
       setSnapshotNote('Saved snapshot');
       const url = new URL(window.location.href);
       url.searchParams.set('s', id);
@@ -459,7 +461,7 @@ export default function App() {
       }
     };
     const reveal = () => {
-      setAgendaName(name);
+      setAgendaName(finalName);
       setNaming(true);
       setShareUrl(finalUrl);
       setShareNote(null);
@@ -469,7 +471,7 @@ export default function App() {
       }, 40);
     };
     const succeed = () => {
-      setAgendaName(name);
+      setAgendaName(finalName);
       setNaming(false);
       setShareUrl(null);
       done('Copied');

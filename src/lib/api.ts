@@ -2,7 +2,14 @@ import type { Snapshot } from './types';
 
 const API_BASE = '/api/schedules';
 
-export async function createShare(snapshot: Snapshot): Promise<string> {
+export interface CreateShareResult {
+  id: string;
+  name: string;
+}
+
+// The server may rename the snapshot to keep it unique (e.g. "Name" ->
+// "Name (1)") — the returned name is the one actually saved.
+export async function createShare(snapshot: Snapshot): Promise<CreateShareResult> {
   const res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -10,7 +17,7 @@ export async function createShare(snapshot: Snapshot): Promise<string> {
   });
   if (!res.ok) throw new Error('Could not save this agenda.');
   const data = await res.json();
-  return data.id as string;
+  return { id: data.id as string, name: (data.name as string) || snapshot.name };
 }
 
 export async function fetchShare(id: string): Promise<Snapshot> {
