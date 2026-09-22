@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchShare, createShare, listSnapshots, type SnapshotIndexEntry } from './lib/api';
+import { fetchShare, createShare, listSnapshots, deleteShare, type SnapshotIndexEntry } from './lib/api';
 import { buildDayView } from './lib/blocks';
 import {
   DEFAULT_BREAK_COLOR,
@@ -54,6 +54,8 @@ function toComparable(x: ComparableFields): ComparableFields {
   };
 }
 
+type PendingAction = { kind: 'open'; value: string } | { kind: 'delete'; id: string; name: string } | null;
+
 export default function App() {
   const [dayCount, setDayCount] = useState<2 | 3>(3);
   const [startMin, setStartMin] = useState(11 * 60);
@@ -80,7 +82,7 @@ export default function App() {
   const [altDays, setAltDays] = useState<Day[]>(() => cloneDays(DEFAULT_DAYS_2));
   const [draftSession, setDraftSession] = useState<DraftSession>({ title: '', type: 'feature', duration: 100, dayId: 'sat', color: null });
   const [savedSnapshots, setSavedSnapshots] = useState<SnapshotIndexEntry[]>([]);
-  const [pendingOpen, setPendingOpen] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>(null);
   const [serverBaseline, setServerBaseline] = useState<ComparableFields | null>(null);
 
@@ -325,22 +327,43 @@ export default function App() {
 
   const onOpenSnapshot = (value: string) => {
     if (!value) return;
-    setPendingOpen(value);
+    setPendingAction({ kind: 'open', value });
   };
-  const onOpenSnapshotCancel = () => setPendingOpen(null);
-  const onOpenSnapshotConfirm = async () => {
-    const value = pendingOpen;
-    setPendingOpen(null);
-    if (!value) return;
-    if (value === '__defaults__') {
-      onReset();
+  const onDeleteSnapshotRequest = (id: string) => {
+    const entry = savedSnapshots.find((s) => s.id === id);
+    setPendingAction({ kind: 'delete', id, name: entry?.name || 'this snapshot' });
+  };
+  const onPendingCancel = () => setPendingAction(null);
+  const onPendingConfirm = async () => {
+    const action = pendingAction;
+    setPendingAction(null);
+    if (!action) return;
+
+    if (action.kind === 'open') {
+      if (action.value === '__defaults__') {
+        onReset();
+        return;
+      }
+      try {
+        const d = await fetchShare(action.value);
+        hydrateSnapshot(action.value, d, 'Opened “' + (d.name || 'snapshot') + '”');
+      } catch {
+        setSnapshotNote('Could not open that snapshot.');
+      }
       return;
     }
+
+    // action.kind === 'delete'
     try {
-      const d = await fetchShare(value);
-      hydrateSnapshot(value, d, 'Opened “' + (d.name || 'snapshot') + '”');
+      await deleteShare(action.id);
+      setSavedSnapshots((cur) => cur.filter((s) => s.id !== action.id));
+      if (activeSnapshotId === action.id) {
+        setActiveSnapshotId(null);
+        setServerBaseline(null);
+        setSnapshotNote(null);
+      }
     } catch {
-      setSnapshotNote('Could not open that snapshot.');
+      setSnapshotNote('Could not delete that snapshot.');
     }
   };
 
@@ -520,6 +543,7 @@ export default function App() {
         onExportCsv={() => exportCsv(days, startMin, minBreakValue, agendaName)}
         savedSnapshots={savedSnapshots}
         onOpenSnapshot={onOpenSnapshot}
+        onDeleteSnapshot={onDeleteSnapshotRequest}
         naming={naming}
         nameDraft={nameDraft}
         onNameDraft={setNameDraft}
@@ -573,10 +597,14 @@ export default function App() {
       </div>
 
       <ConfirmModal
-        open={pendingOpen !== null}
-        message="Are you sure? Make sure you save your current snapshot before opening another one."
-        onConfirm={() => void onOpenSnapshotConfirm()}
-        onCancel={onOpenSnapshotCancel}
+        open={pendingAction !== null}
+        message={
+          pendingAction?.kind === 'delete'
+            ? `Delete "${pendingAction.name}"? This removes it for everyone, permanently.`
+            : 'Are you sure? Make sure you save your current snapshot before opening another one.'
+        }
+        onConfirm={() => void onPendingConfirm()}
+        onCancel={onPendingCancel}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useState } from 'react';
 import type { SnapshotIndexEntry } from '../lib/api';
 
 interface Props {
@@ -29,6 +30,7 @@ interface Props {
 
   savedSnapshots: SnapshotIndexEntry[];
   onOpenSnapshot: (value: string) => void;
+  onDeleteSnapshot: (id: string) => void;
 
   naming: boolean;
   nameDraft: string;
@@ -66,6 +68,7 @@ const BREAK_SWATCHES = ['#8A7D6D', '#AFA594', '#CFC5B2', '#5B4A3A'];
 
 export default function Header(props: Props) {
   const noShareUrl = !props.importing && !props.shareUrl;
+  const [snapshotMenuOpen, setSnapshotMenuOpen] = useState(false);
 
   return (
     <header
@@ -302,23 +305,128 @@ export default function Header(props: Props) {
                 </div>
               </div>
             )}
-            <select
-              value=""
-              onChange={(e) => props.onOpenSnapshot(e.target.value)}
-              aria-label="Open a saved snapshot"
-              title="Open a saved snapshot"
-              style={{ ...buttonStyle, maxWidth: 168, cursor: 'pointer' }}
-            >
-              <option value="" disabled>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setSnapshotMenuOpen((v) => !v)}
+                aria-label="Open a saved snapshot"
+                title="Open a saved snapshot"
+                className="hover-panel"
+                style={{ ...buttonStyle, maxWidth: 168 }}
+              >
                 Open snapshot…
-              </option>
-              <option value="__defaults__">Start fresh (defaults)</option>
-              {props.savedSnapshots.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {formatSnapshotDate(s.at)}
-                </option>
-              ))}
-            </select>
+              </button>
+              {snapshotMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 40,
+                    right: 0,
+                    zIndex: 60,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    width: 300,
+                    padding: 10,
+                    border: '1px solid #E6DDD0',
+                    borderRadius: 8,
+                    background: '#FFFDF8',
+                    boxShadow: '0 12px 28px -10px rgba(61,46,31,0.28)'
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setSnapshotMenuOpen(false);
+                      props.onOpenSnapshot('__defaults__');
+                    }}
+                    className="hover-panel"
+                    style={{
+                      textAlign: 'left',
+                      border: 'none',
+                      background: 'transparent',
+                      borderRadius: 6,
+                      padding: '7px 8px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      color: '#3D2E1F'
+                    }}
+                  >
+                    Start fresh (defaults)
+                  </button>
+                  <div style={{ height: 1, background: '#E6DDD0', margin: '2px 0' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 240, overflowY: 'auto' }}>
+                    {props.savedSnapshots.length === 0 && (
+                      <span style={{ fontSize: 12, color: '#8A7D6D', padding: '6px 8px' }}>No saved snapshots yet.</span>
+                    )}
+                    {props.savedSnapshots.map((s) => (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <button
+                          onClick={() => {
+                            setSnapshotMenuOpen(false);
+                            props.onOpenSnapshot(s.id);
+                          }}
+                          className="hover-panel"
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            textAlign: 'left',
+                            border: 'none',
+                            background: 'transparent',
+                            borderRadius: 6,
+                            padding: '6px 8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 12.5,
+                              fontWeight: 500,
+                              color: '#2A2520',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            {s.name}
+                          </span>
+                          <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: '#8A7D6D' }}>{formatSnapshotDate(s.at)}</span>
+                        </button>
+                        <button
+                          onClick={() => props.onDeleteSnapshot(s.id)}
+                          title={`Delete "${s.name}"`}
+                          aria-label={`Delete "${s.name}"`}
+                          style={{
+                            flex: 'none',
+                            border: '1px solid #EECECE',
+                            background: '#F6E0E0',
+                            color: '#7A2E2E',
+                            borderRadius: 5,
+                            width: 22,
+                            height: 22,
+                            lineHeight: 1,
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            padding: 0
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ height: 1, background: '#E6DDD0', margin: '2px 0' }} />
+                  <button
+                    onClick={() => setSnapshotMenuOpen(false)}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 11.5, color: '#8A7D6D', padding: '2px 8px', alignSelf: 'flex-end' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
             <button onClick={props.onShare} className="hover-panel" style={{ ...buttonStyle, width: 142, textAlign: 'center' }}>
               {props.shareAction}
             </button>

@@ -1,10 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { nanoid } from 'nanoid';
 import { getRedis } from '../_redis.js';
+import { INDEX_KEY, KEY_PREFIX } from '../_keys.js';
 
 const ID_LENGTH = 8;
-const KEY_PREFIX = 'schedule:';
-const INDEX_KEY = 'schedules:index';
 const LIST_LIMIT = 200;
 
 interface IndexEntry {

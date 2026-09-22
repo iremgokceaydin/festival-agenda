@@ -37,3 +37,8 @@ export async function listSnapshots(): Promise<SnapshotIndexEntry[]> {
   if (!res.ok) throw new Error('Could not load saved snapshots.');
   return (await res.json()) as SnapshotIndexEntry[];
 }
+
+export async function deleteShare(id: string): Promise<void> {
+  const res = await fetch(API_BASE + '/' + encodeURIComponent(id), { method: 'DELETE' });
+  if (!res.ok) throw new Error('Could not delete that snapshot.');
+}
