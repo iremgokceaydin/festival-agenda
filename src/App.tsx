@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchShare, createShare } from './lib/api';
+import { fetchShare, createShare, listSnapshots, type SnapshotIndexEntry } from './lib/api';
 import { buildDayView } from './lib/blocks';
 import {
   DEFAULT_BREAK_COLOR,
@@ -18,7 +18,6 @@ import {
 import { exportCsv, exportPdf } from './lib/export';
 import { colorOf, findSession, fmt, place } from './lib/schedule';
 import { clearDraft, loadDraft, saveDraft } from './lib/storage';
-import { addSnapshotEntry, loadSnapshotList, type SnapshotEntry } from './lib/snapshots';
 import { statesDiffer } from './lib/diff';
 import type { Day, Session, SessionType, Snapshot } from './lib/types';
 import { useDragResize } from './hooks/useDragResize';
@@ -80,7 +79,7 @@ export default function App() {
   const [days, setDays] = useState<Day[]>(() => cloneDays(DEFAULT_DAYS));
   const [altDays, setAltDays] = useState<Day[]>(() => cloneDays(DEFAULT_DAYS_2));
   const [draftSession, setDraftSession] = useState<DraftSession>({ title: '', type: 'feature', duration: 100, dayId: 'sat', color: null });
-  const [savedSnapshots, setSavedSnapshots] = useState<SnapshotEntry[]>(() => loadSnapshotList());
+  const [savedSnapshots, setSavedSnapshots] = useState<SnapshotIndexEntry[]>([]);
   const [pendingOpen, setPendingOpen] = useState<string | null>(null);
   const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>(null);
   const [serverBaseline, setServerBaseline] = useState<ComparableFields | null>(null);
@@ -177,6 +176,18 @@ export default function App() {
       hydratedRef.current = true;
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Populate the "open snapshot" dropdown with every snapshot saved
+  // site-wide, not just the ones this browser created.
+  useEffect(() => {
+    (async () => {
+      try {
+        setSavedSnapshots(await listSnapshots());
+      } catch {
+        /* dropdown just falls back to "Start fresh" only */
+      }
+    })();
   }, []);
 
   // Autosave the working draft locally once hydrated, scoped to whichever
@@ -412,7 +423,7 @@ export default function App() {
     let finalUrl: string;
     try {
       const id = await createShare(snapshot);
-      setSavedSnapshots(addSnapshotEntry({ id, name, at: snapshot.at }));
+      setSavedSnapshots((cur) => [{ id, name, at: snapshot.at }, ...cur.filter((e) => e.id !== id)]);
       setActiveSnapshotId(id);
       setServerBaseline(toComparable(snapshot));
       setSnapshotNote('Saved snapshot');

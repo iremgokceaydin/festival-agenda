@@ -18,3 +18,15 @@ export async function fetchShare(id: string): Promise<Snapshot> {
   if (!res.ok) throw new Error('That code could not be read.');
   return (await res.json()) as Snapshot;
 }
+
+export interface SnapshotIndexEntry {
+  id: string;
+  name: string;
+  at: number;
+}
+
+export async function listSnapshots(): Promise<SnapshotIndexEntry[]> {
+  const res = await fetch(API_BASE);
+  if (!res.ok) throw new Error('Could not load saved snapshots.');
+  return (await res.json()) as SnapshotIndexEntry[];
+}

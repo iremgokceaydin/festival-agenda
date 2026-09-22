@@ -1,5 +1,5 @@
 import type React from 'react';
-import type { SnapshotEntry } from '../lib/snapshots';
+import type { SnapshotIndexEntry } from '../lib/api';
 
 interface Props {
   agendaName: string;
@@ -27,7 +27,7 @@ interface Props {
   onExportPdf: () => void;
   onExportCsv: () => void;
 
-  savedSnapshots: SnapshotEntry[];
+  savedSnapshots: SnapshotIndexEntry[];
   onOpenSnapshot: (value: string) => void;
 
   naming: boolean;
