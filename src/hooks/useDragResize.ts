@@ -141,7 +141,11 @@ export function useDragResize(
     if (!r) return;
     const { minBreak: mb, pxPerMin: ppm } = live.current;
     const delta = (e.clientY - r.y) / ppm;
-    let next = Math.round((r.orig + delta) / 5) * 5;
+    // Sessions still snap to 5-minute steps; breaks snap to 1-minute steps
+    // above their minimum, so the min-break floor stays exact but any
+    // stretch past it is fine-grained.
+    const step = r.kind === 'break' ? 1 : 5;
+    let next = Math.round((r.orig + delta) / step) * step;
     if (r.kind === 'session') next = Math.max(10, Math.min(400, next));
     else next = Math.max(mb, Math.min(240, next));
 
