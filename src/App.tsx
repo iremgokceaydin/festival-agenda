@@ -15,7 +15,7 @@ import {
   mk,
   uid
 } from './lib/defaults';
-import { exportCsv, exportPdf } from './lib/export';
+import { exportXlsx, exportPdf } from './lib/export';
 import { colorOf, findSession, fmt, place } from './lib/schedule';
 import { clearDraft, loadDraft, saveDraft } from './lib/storage';
 import { statesDiffer } from './lib/diff';
@@ -540,7 +540,7 @@ export default function App() {
         zoomLabel={Math.round((pxPerMin / DEFAULT_PX_PER_MIN) * 100) + '%'}
         onZoomChange={setZoom}
         onExportPdf={() => exportPdf(days, startMin, endMin, minBreakValue, agendaName, dayCount)}
-        onExportCsv={() => exportCsv(days, startMin, minBreakValue, agendaName)}
+        onExportXlsx={() => void exportXlsx(days, startMin, minBreakValue, agendaName)}
         savedSnapshots={savedSnapshots}
         onOpenSnapshot={onOpenSnapshot}
         onDeleteSnapshot={onDeleteSnapshotRequest}

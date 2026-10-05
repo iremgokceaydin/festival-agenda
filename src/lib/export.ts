@@ -1,6 +1,7 @@
+import type ExcelJS from 'exceljs';
 import { FESTIVAL_DATE_LABELS, INTRO, TYPES } from './defaults';
 import { fmt, place } from './schedule';
-import type { Day } from './types';
+import type { Day, SessionType } from './types';
 
 interface ExportRow {
   day: Day;
@@ -8,6 +9,7 @@ interface ExportRow {
   end: number;
   title: string;
   kind: string;
+  type: SessionType | null;
   dur: number;
   isBreak: boolean;
 }
@@ -17,24 +19,55 @@ function exportRows(days: Day[], startMin: number, minBreak: number): ExportRow[
   days.forEach((day) => {
     const { rows } = place(day.sessions, startMin, minBreak);
     rows.forEach((r) => {
-      if (r.gap) out.push({ day, start: r.gap.start, end: r.gap.start + r.gap.dur, title: 'Break', kind: 'Break', dur: r.gap.dur, isBreak: true });
+      if (r.gap) out.push({ day, start: r.gap.start, end: r.gap.start + r.gap.dur, title: 'Break', kind: 'Break', type: null, dur: r.gap.dur, isBreak: true });
       const t = TYPES.find((x) => x.id === r.session.type) || TYPES[0];
-      out.push({ day, start: r.start, end: r.end, title: r.session.title, kind: t.label, dur: r.session.duration + INTRO, isBreak: false });
+      out.push({ day, start: r.start, end: r.end, title: r.session.title, kind: t.label, type: r.session.type, dur: r.session.duration + INTRO, isBreak: false });
     });
   });
   return out;
 }
 
-export function exportCsv(days: Day[], startMin: number, minBreak: number, agendaName: string): void {
-  const q = (v: unknown) => '"' + String(v).replace(/"/g, '""') + '"';
-  const lines = [['Day', 'Date', 'Start', 'End', 'Title', 'Kind', 'Minutes'].join(',')];
+const FILM_ROW_FILL: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3B0' } };
+const HEADER_FILL: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6DDD0' } };
+
+export async function exportXlsx(days: Day[], startMin: number, minBreak: number, agendaName: string): Promise<void> {
+  // Dynamically imported so the ~1MB exceljs bundle only loads when someone
+  // actually clicks the button, not on every page visit.
+  const { default: ExcelJS } = await import('exceljs');
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Schedule');
+  ws.columns = [
+    { header: 'Day', key: 'day', width: 12 },
+    { header: 'Date', key: 'date', width: 10 },
+    { header: 'Start', key: 'start', width: 11 },
+    { header: 'End', key: 'end', width: 11 },
+    { header: 'Title', key: 'title', width: 36 },
+    { header: 'Kind', key: 'kind', width: 26 },
+    { header: 'Minutes', key: 'minutes', width: 10 }
+  ];
+  const headerRow = ws.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.eachCell((cell) => (cell.fill = HEADER_FILL));
+
   exportRows(days, startMin, minBreak).forEach((r) => {
-    lines.push([q(r.day.label), q(FESTIVAL_DATE_LABELS[r.day.id] || ''), q(fmt(r.start)), q(fmt(r.end)), q(r.title), q(r.kind), r.dur].join(','));
+    const row = ws.addRow({
+      day: r.day.label,
+      date: FESTIVAL_DATE_LABELS[r.day.id] || '',
+      start: fmt(r.start),
+      end: fmt(r.end),
+      title: r.title,
+      kind: r.isBreak ? '' : r.kind,
+      minutes: r.dur
+    });
+    // Feature and short film rows get a light yellow background; breaks stay plain.
+    if (!r.isBreak) row.eachCell((cell) => (cell.fill = FILM_ROW_FILL));
   });
-  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = ((agendaName || 'festival weekend schedule').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'schedule') + '.csv';
+  a.download = ((agendaName || 'festival weekend schedule').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'schedule') + '.xlsx';
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {
@@ -58,6 +91,12 @@ export function exportPdf(days: Day[], startMin: number, endMin: number, minBrea
     .map((k) => {
       const g = byDay[k];
       const total = g.rows.filter((r) => !r.isBreak).reduce((a, r) => a + r.dur, 0);
+      const featureCount = g.rows.filter((r) => r.type === 'feature').length;
+      const shortCount = g.rows.filter((r) => r.type === 'fiction' || r.type === 'doc').length;
+      const countParts: string[] = [];
+      if (featureCount) countParts.push(featureCount + (featureCount === 1 ? ' feature' : ' features'));
+      if (shortCount) countParts.push(shortCount + (shortCount === 1 ? ' short' : ' shorts'));
+      const countLabel = countParts.length ? countParts.join(', ') : '0 films';
       const body = g.rows
         .map(
           (r) =>
@@ -83,8 +122,8 @@ export function exportPdf(days: Day[], startMin: number, endMin: number, minBrea
         esc(FESTIVAL_DATE_LABELS[g.day.id] || '') +
         '</span></h2>' +
         '<p class="meta">' +
-        g.rows.filter((r) => !r.isBreak).length +
-        ' films · ' +
+        countLabel +
+        ' · ' +
         durLabel(total) +
         ' on screen</p>' +
         '<table>' +

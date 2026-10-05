@@ -26,7 +26,7 @@ interface Props {
   onZoomChange: (v: number) => void;
 
   onExportPdf: () => void;
-  onExportCsv: () => void;
+  onExportXlsx: () => void;
 
   savedSnapshots: SnapshotIndexEntry[];
   onOpenSnapshot: (value: string) => void;
@@ -217,8 +217,8 @@ export default function Header(props: Props) {
             <button onClick={props.onExportPdf} className="hover-panel" style={buttonStyle}>
               PDF
             </button>
-            <button onClick={props.onExportCsv} className="hover-panel" style={buttonStyle}>
-              CSV
+            <button onClick={props.onExportXlsx} className="hover-panel" style={buttonStyle}>
+              XLSX
             </button>
           </div>
         </div>
